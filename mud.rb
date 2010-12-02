@@ -1,12 +1,12 @@
 require 'eventmachine'
 
 module MUD
-  Brand = "BABY SEAL MUD!"
-  Port = 8888
+  Brand   = "BABY SEAL MUD!"
+  Port    = 8888
   Players = []
   
   class Player
-    attr_accessor :name, :hp, :vit, :con, :dirty, :bounce, :flop
+    attr_accessor :name, :hp, :vit, :con, :dirty, :bounce
 
     def initialize(name, con)
       @name = name
@@ -14,20 +14,11 @@ module MUD
       @hp = 10
       @vit = 12
       @dirty = true
-      @position = flop
       MUD::Players << self
       send "Welcome #{name}! You are a baby seal!"
       other_players.each { |p| p.send "#{name} has arrived." }
       prompt
     end
-
-#   class Object
-#     attr_accessor :make, :thing
-#       @make = make
-#       @thing = thing
-
-         
-     
 
     def send(data)
       unless @dirty
@@ -63,7 +54,6 @@ module MUD
       send "THE ARCTIC"
       send "You are on a beautiful, icy, rocky beach."
       send " [------]"
-#      other_objects.each { |o| send "#{o.name} is here." }
       other_players.each { |p| send "#{p.name} is here." }
     end
 
@@ -86,11 +76,11 @@ module MUD
     def do_make(thing)
       send "You make a beautiful #{thing}"
       other_players.each { |p| p.send "#{name} builds a beautiful #{thing}" }
-      
+    end
+
     def do_bounce
       send "You start bouncing up and down!"
       other_players.each { |p| p.send "#{name} starts bouncing up and down!"}
-      @
     end
 
     def prompt
