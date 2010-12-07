@@ -1,4 +1,5 @@
 require 'eventmachine'
+require 'magicalitems'
 
 #push, pop, rdoc, detect
 
@@ -17,10 +18,12 @@ module MUD
       @hp = 10
       @vit = 12
       @dirty = true
-      @inventorybg = 0
+      @inventorybg = 4
       @position = true
       @readytoblow = false
-#      Inv = {:item => []}     #internal player inventory array
+      @room = 1
+      @inv = [] #internal player inventory array
+      @wear = [] #wearing things!
       MUD::Players << self
       send "Welcome #{name}! You are a baby seal!"
       other_players.each { |p| p.send "#{name} has arrived." }
@@ -46,6 +49,9 @@ module MUD
       case cmd
         when "say"; do_say(arg)
         when "look"; do_look
+        when "take"; do_take
+        when "drop"; do_drop
+        when "wear"; do_wear
         when "exit"; do_exit
         when "help"; do_help
         when "chew"; do_chew
@@ -65,8 +71,8 @@ module MUD
       send "You are on a beautiful, icy, rocky beach."
       send "#{Room[:bubblegum]} pieces of bubblegum sit here."
       send " [------]"
-      other_players.each { |p| send "#{p.name} is here." }
-      Room[:item].each { |m| send "A #{m.itemcolor} #{m.itemname} is here."}
+      other_players.each { |p| send "#{p.name} is here." }     
+      Room[:item].each { |m| send "#{m.itemcolor} #{m.itemname} is here.".capitalize}
     end
 
     def do_say(message)
@@ -82,26 +88,24 @@ module MUD
     end
 
     def do_help
-      send "Commands: say, look, exit, help, make, bounce, flop, blow"
+      send "Commands: say, look, exit, help, make, bounce, flop, blow, take, inventory, drop"
     end
-
-   
 
     def do_bounce
       send "You start bouncing up and down!"
       other_players.each { |p| p.send "#{name} starts bouncing up and down!"}
-      bouncygum = rand(4) + 1   
+      bouncygum = rand(4) + 1
       Room[:bubblegum] += bouncygum
       @position = false
       send "You make #{bouncygum} magic pieces of bubblegum!"
-      other_players.each { |p| p.send "#{name} makes #{bouncygum} magic pieces of bubblegum!" }  
+      other_players.each { |p| p.send "#{name} makes #{bouncygum} magic pieces of bubblegum!" }
     end
 
     def do_chew
       unless @position
         send "One cannot chew gum and bounce at the same time."
       return
-      end      
+      end
       if @inventorybg > 0
         send "You begin chewing one of your magic pieces of bubblegum."
         other_players.each { |p| p.send "#{name} begins chewing a piece of magic bubblegum."}
@@ -109,34 +113,6 @@ module MUD
         @readytoblow = true
       else
         send "You are all out of gum! Bounce to make more!"
-      end
-    end  
-   
-    def do_blow
-      unless @readytoblow
-        send "You must chew the bubblegum before you can blow a bubble!"
-      else
-        send "You blow a bright red, magic bubble until it POPS!"
-        other_players.each { |p| p.send "#{name} blows a bright red magic bubble until it POPS!"}
-        @readytoblow = false
-          color = ["red", "green", "blue", "crucified", "bloody", "rusty", "used", "rancid", "holy", "rubber", "ragged", "angry", "moldy"]
-          cc = color[rand(color.size)]
-          toy = ["gimp suit", "condom", "needle", "raincloud", "dwarven battleaxe +12", "box jellyfish", "polar bear chew toy", "cardboard-cutout of Matthew McConaughey", "inflatable Silvia Plath doll", "monkey", "battle-robot", "stuffed-animal yeti", "home-liposuction kit"]
-          tt = toy[rand(toy.size)]
-          send "A #{cc} #{tt} appears!"
-          other_players.each { |p| p.send "A #{cc} #{tt} appears!"}   
-          Room[:item] << MagicalItem.new("#{tt}", "#{cc}")       
-      end
-    end 
-
-    def do_get
-      if Room[:bubblegum] == 0
-        send "There is no bubblegum here!"
-      else
-        send "You pick up a piece of magical bubblegum."
-        other_players.each { |p| p.send "#{name} picks up a piece of magical bubblegum."}
-        @inventorybg += 1
-        Room[:bubblegum] -= 1
       end
     end
    
@@ -153,15 +129,8 @@ module MUD
 
     def do_inventory
       send "you look in your fannypack! you have #{@inventorybg} pieces of bubblegum!"
-    end     
-  end
-
-  class MagicalItem
-    attr_accessor :itemname, :itemcolor
-
-    def initialize(itemname, itemcolor)
-      @itemname = itemname
-      @itemcolor = itemcolor
+      @inv.each { |m| send "You are balancing #{m.itemcolor} #{m.itemname} on your head."}
+      @wear.each { |m| send "You proudly wear #{m.itemcolor} #{m.itemname}."}
     end
   end
   
