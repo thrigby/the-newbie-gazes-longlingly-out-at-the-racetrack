@@ -1,53 +1,6 @@
-require 'eventmachine'
-require 'basic'
-
-#require 'loc'
-
-=begin
-
-things to study: push*, pop*, rdoc*, detect (*more or less studied)
-
-1.  Use select or reject if you need to select or reject items based on a condition.
-2.  Use collect if you need to build an array of the results from logic in the block.
-3.  Use inject if you need to accumulate, total, or concatenate array values together.
-4.  Use detect if you need to find an item in an array.
-
-=end
-
 module MUD
-  Brand = "BABY SEAL MUD!"
-  Port = 8888
-
-  class World
-    attr_accessor :number
-
-    def initialize (number)
-      @number = []
-    end
-  end
-
-  class Room
-    attr_accessor :bubblegum, :item, :players, :desc, :title, :number
-    
-    def initialize (title, desc, number)
-      @bubblegum = 0
-      @item = []
-      @players = []
-      @desc = desc
-      @title = title
-      @number = 0 
-    end      
-
-    def add_item(item)
-      @players.each { |p| p.send "#{item} appears!".capitalize }   
-      @item << item
-    end
-  end  
-
-  StartRoom = Room.new "THE ARCTIC", "You are on a beautiful, icy, rocky beach.", 1
- 
   class Player
-    include Basic                      #basic non-room related commands
+    include Commands
     attr_accessor :name, :hp, :vit, :con, :dirty, :bounce, :wear
 
     def initialize(name, con)
@@ -270,42 +223,5 @@ module MUD
       con.send_data "h:#{hp} v:#{vit}> "
       @dirty = false
     end
-    
-  end
-
-  class MagicalItem
-    attr_accessor :itemname, :itemcolor
-
-    def initialize(itemname, itemcolor)
-      @itemname = itemname
-      @itemcolor = itemcolor
-    end
-    
-    def to_s
-      "a #{itemcolor} #{itemname}"      
-    end
-  end
-  
-  module Connection
-    def post_init
-      send_data("Login: ")
-    end
-
-    def receive_data(data)
-      if @player
-        ### ' SaY hello WORld ' --> 'say', 'hello WORld'
-        match = data.strip.match(/(\w*)\s*(.*)/)
-        @player.command match[1].downcase, match[2]
-      else
-        @player = MUD::Player.new data.strip.capitalize, self
-        @player.to_room(MUD::StartRoom)  #this is the only time we'll have MUD::Room, dammit. this is the only magical room!
-      end
-    end
   end
 end
-
-EventMachine::run do
-  EventMachine::start_server "0.0.0.0", MUD::Port, MUD::Connection
-  puts "Started #{MUD::Brand} Server. To connect use 'telnet 0.0.0.0 #{MUD::Port}'"
-end
-
