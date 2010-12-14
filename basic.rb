@@ -1,6 +1,4 @@
 module Basic         #basic commands where there isn't a direct room interaction
-
-
   def do_help
     send "                BABY SEAL MUD COMMANDS"
     send "          say: just type say and your message"
@@ -25,7 +23,6 @@ module Basic         #basic commands where there isn't a direct room interaction
   def do_score
     send "             Blubber: #{@str}"
     send "       Eye-Beadiness: #{@dex}"
-#    send "Vim: #{@con}"
     send "               Pluck: #{@cool}"
     send "            Cuteness: #{@luck}"
     send "      Whisker Length: #{@wis}"
@@ -93,5 +90,4 @@ module Basic         #basic commands where there isn't a direct room interaction
       send "You sense that your attack power is #{@inv.length}"
       send "You sense that your defense is #{@wear.length}"
   end       
-
 end

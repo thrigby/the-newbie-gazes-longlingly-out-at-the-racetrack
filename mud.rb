@@ -1,8 +1,10 @@
 require 'eventmachine'
 require 'basic'
+
 #require 'loc'
 
 =begin
+
 things to study: push*, pop*, rdoc*, detect (*more or less studied)
 
 1.  Use select or reject if you need to select or reject items based on a condition.
@@ -12,9 +14,7 @@ things to study: push*, pop*, rdoc*, detect (*more or less studied)
 
 =end
 
-
 module MUD
-#  include Loc
   Brand = "BABY SEAL MUD!"
   Port = 8888
 
@@ -37,12 +37,14 @@ module MUD
       @title = title
       @number = 0 
     end      
+
+    def add_item(item)
+      @players.each { |p| p.send "#{item} appears!".capitalize }   
+      @item << item
+    end
   end  
 
-
-
   StartRoom = Room.new "THE ARCTIC", "You are on a beautiful, icy, rocky beach.", 1
-
  
   class Player
     include Basic                      #basic non-room related commands
@@ -59,7 +61,6 @@ module MUD
       @wear = []
       @str = rand(10) + 1
       @dex = rand(10) + 1
-#      @con = rand(10) + 1
       @cool = rand(10) + 1
       @luck = rand(10) + 1
       @wis = rand(10) + 1
@@ -68,16 +69,17 @@ module MUD
       @readytoblow = false
       send "Welcome #{name}! You are a baby seal!"         
       prompt
-#      room_array
     end
 
     def to_room(room)
+      if @room
+        other_players.each { |p| p.send "#{name} has left." }
+        @room.players.delete self
+      end
+
       @room = room
-      @room.players << self
+      @room.players.push self
       other_players.each { |p| p.send "#{name} has arrived." }
-      #attach the room to the player
-      #attach the player to the room
-      
     end 
 
     def send(data)
@@ -91,7 +93,6 @@ module MUD
     end
 
     def other_players
-#      MUD::Players.reject { |p| p == self }
        @room.players.reject { |p| p == self}      
 #      array.reject {|item| block } → an_array
 #      Returns a new array containing the items in self for which the block is not true.      
@@ -135,12 +136,9 @@ module MUD
         when "glue"; do_glue
         else ; send "Unknown Command: '#{cmd}'. Type 'help' for commands."
       end
- #     MUD::Players.each { |p| p.prompt if p.dirty }
-       @room.players.each { |p| p.prompt if p.dirty }
+      @room.players.each { |p| p.prompt if p.dirty }
     end
 
-
-#array.inspect → string...detect!
     def find_player_by_name(name)  
       @room.players.detect { |p| p.name.downcase == name.downcase}
     end
@@ -169,12 +167,10 @@ module MUD
       target = find_player_by_name(name)
       if target
         send "You smile at #{target.name}."
-        end        
       else
         send "NOBODY HOME"
       end  
     end
-
 
     def do_say(message)
       send "You say '#{message}'"
@@ -194,8 +190,7 @@ module MUD
       send "A Polar Bear Eats You!"
       other_players.each { |p| p.send "#{name} was dragged away by a polar bear!" }
       con.close_connection_after_writing
-#      MUD::Players.delete self
-       @room.players.delete self    #!!!!!!!!!
+      @room.players.delete self    #!!!!!!!!!
     end
 
     def do_drop
@@ -246,13 +241,11 @@ module MUD
         send "You blow a bright red, magic bubble until it POPS!"
         other_players.each { |p| p.send "#{name} blows a bright red magic bubble until it POPS!"}
         @readytoblow = false
-          color = ["red-painted", "green-painted", "blue-painted", "bloody", "rusty", "used", "rancid", "holy", "rubber", "ragged", "moldy", "tasteful", "ceremonial", "shag-carpeted", "dusty", "rotting", "solid-gold"]
-          cc = color[rand(color.size)]
-          toy = ["gimp suit", "stapler", "needle", "raincloud", "superman suit", "box jellyfish", "polar bear chew toy", "cardboard-cutout of Matthew McConaughey", "balloon", "harpoon", "battle-robot", "toy yeti", "home-liposuction kit", "polar-bear pelt", "jar of pickles", "batman cowl", "pixie wings", "hula-hoop", "glow sticks", "shrunken head", "vader helmet", "wonder-woman suit", "teacup", "dead baby seal", "Lady Liberty crown and torch", "collectable spoon", "witch's hat", "twelve-gauge shotgun", "piece of Einstein's brain", "talking stick", "tommygun", "underwood typewriter", "boquet of roses", "umbrella", "ring of power", "inflatable Silvia Plath doll", "egyptian mummy"]
-          tt = toy[rand(toy.size)]
-          send "A #{cc} #{tt} appears!"
-          other_players.each { |p| p.send "A #{cc} #{tt} appears!"}   
-          @room.item << MagicalItem.new("#{tt}", "#{cc}")       
+        color = ["red-painted", "green-painted", "blue-painted", "bloody", "rusty", "used", "rancid", "holy", "rubber", "ragged", "moldy", "tasteful", "ceremonial", "shag-carpeted", "dusty", "rotting", "solid-gold"]
+        cc = color[rand(color.size)]
+        toy = ["gimp suit", "stapler", "needle", "raincloud", "superman suit", "box jellyfish", "polar bear chew toy", "cardboard-cutout of Matthew McConaughey", "balloon", "harpoon", "battle-robot", "toy yeti", "home-liposuction kit", "polar-bear pelt", "jar of pickles", "batman cowl", "pixie wings", "hula-hoop", "glow sticks", "shrunken head", "vader helmet", "wonder-woman suit", "teacup", "dead baby seal", "Lady Liberty crown and torch", "collectable spoon", "witch's hat", "twelve-gauge shotgun", "piece of Einstein's brain", "talking stick", "tommygun", "underwood typewriter", "boquet of roses", "umbrella", "ring of power", "inflatable Silvia Plath doll", "egyptian mummy"]
+        tt = toy[rand(toy.size)]
+        @room.add_item MagicalItem.new tt, cc
       end
     end
      
@@ -286,7 +279,6 @@ module MUD
     def initialize(itemname, itemcolor)
       @itemname = itemname
       @itemcolor = itemcolor
-      
     end
     
     def to_s
@@ -306,7 +298,6 @@ module MUD
         @player.command match[1].downcase, match[2]
       else
         @player = MUD::Player.new data.strip.capitalize, self
-  #      MUD::Players << @player
         @player.to_room(MUD::StartRoom)  #this is the only time we'll have MUD::Room, dammit. this is the only magical room!
       end
     end
@@ -317,3 +308,4 @@ EventMachine::run do
   EventMachine::start_server "0.0.0.0", MUD::Port, MUD::Connection
   puts "Started #{MUD::Brand} Server. To connect use 'telnet 0.0.0.0 #{MUD::Port}'"
 end
+
