@@ -120,6 +120,7 @@ module MUD
       target = find_player_by_name(name)
       if target
         send "You smile at #{target.name}."
+        target.send "#{name} smiles at you showing rows and rows of razor-sharp teeth.".capitalize
       else
         send "NOBODY HOME"
       end  
@@ -136,24 +137,28 @@ module MUD
       send "#{@room.bubblegum} pieces of bubblegum sit here."
       send " [------]"
       other_players.each { |p| send "#{p.name} is here." }
-      @room.item.each { |m| send "A #{m.itemcolor} #{m.itemname} is here."}
+      if @room.item.empty?
+        send "no items"
+      else
+        @room.item.each { |m| send "#{m.item} sits here."}
+      end
     end
 
     def do_exit
       send "A Polar Bear Eats You!"
       other_players.each { |p| p.send "#{name} was dragged away by a polar bear!" }
       con.close_connection_after_writing
-      @room.players.delete self    #!!!!!!!!!
+      @room.players.delete self    
     end
 
     def do_drop
       if @inv.empty?
-        send "You aren't carrying anything."
+        send "you're not carrying anything to drop."
       else
-        send "You drop #{@inv.last.itemcolor} #{@inv.last.itemname} on the ground."
-        other_players.each { |p| p.send "#{name} drops a #{@inv.last.itemcolor} #{@inv.last.itemname} ."}
-        @room.item.push(@inv.pop)
-      end
+        send "You drop #{@inv.last} on the ground."  
+        other_players.each { |p| p.send "#{name} drops #{@inv.last} on the ground."}
+      @room.item.push(@inv.pop)
+      end    
     end
 
     def do_take
@@ -162,7 +167,7 @@ module MUD
       else
         send "You flip #{@room.item.last} onto your back."
         other_players.each { |p| p.send "#{name} flips #{@room.item.last} on his back."}
-        @inv.push(@room.item.pop)             
+        @inv << @room.item.pop             
       end 
     end
 
@@ -206,15 +211,12 @@ module MUD
       unless @readytoblow
         send "You must chew the gum before you can use it as glue!"
       else
-        if @inv.nitems < 2    #simplify so only two items in inventory
+        if @inv.empty?
           send "You need at least two things in your inventory to glue together."
         else
-          send "You carefully glue a #{@inv[0].itemcolor} #{@inv[0].itemname} to a #{@inv[1].itemcolor} #{@inv[1].itemname} with your magical bubblegum."
-          other_players.each { |p| p.send "#{name} carefully glues a #{@inv[0].itemcolor} #{@inv[0].itemname} to a #{@inv[1].itemcolor} #{@inv[1].itemname} with his magical bubblegum."}
-          cc = @inv[0].itemcolor + " " + @inv[0].itemname
-          tt = @inv[1].itemcolor + " " + @inv[1].itemname
-          @inv.clear
-          @inv << MagicalItem.new("#{tt}", " #{cc} glued to a")
+          send "You carefully glue #{@inv[0]} to  #{@inv[1]} with your magical bubblegum."
+          other_players.each { |p| p.send "#{name} carefully glues #{@inv[0]} to  #{@inv[1]} with his magical bubblegum."}         
+          @inv << MagicalItem.new("glued to #{@inv.shift}","#{@inv.shift}")
         end  
       end
     end     
@@ -225,3 +227,33 @@ module MUD
     end
   end
 end
+
+=begin
+Orion:  def attach(item)
+ me:  you fixed my smile code
+ Orion:  @attached = item
+end
+def to_s
+if @attached
+"#{@attached} glued to a #{color} #{name}"
+else
+"a #{color} #{name}"
+end
+en
+ me:  ponder
+ Orion:  oh wait it gets better
+def attach(item)
+if @attached
+@attached.attach(item)
+else
+@attached = item
+end
+end
+(if I already have an item attached to me - instead glue it to the item i'm attached to)
+can create a list of items of any depth
+also the to_s will show
+ me:  hmmm
+ Orion:  "a glued to b glued to c glued to d"
+and dissassemble is easy
+
+=end

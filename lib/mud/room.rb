@@ -14,6 +14,6 @@ module MUD
     def add_item(item)
       @players.each { |p| p.send "#{item} appears!".capitalize }   
       @item << item
-    end
+    end  
   end  
 end

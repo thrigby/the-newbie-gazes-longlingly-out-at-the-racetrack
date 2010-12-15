@@ -42,7 +42,7 @@ module MUD
       else
         send "You carefully balance #{@inv.last} on your head."
         other_players.each { |p| p.send "#{name} carefully balances a #{@inv.last} on his head. "}
-      @wear.push(@inv.pop)
+        @wear.push(@inv.pop)
       end
     end
 
@@ -50,9 +50,9 @@ module MUD
       if @wear.empty?
         send "You aren't wearing anything to remove."
       else
-        send "You remove a #{@wear.last.itemcolor} #{@wear.last.itemname} from your head. "
-        other_players.each { |p| p.send "#{name} removes a  #{@wear.last.itemcolor} #{@wear.last.itemname} from his head. "}
-      @inv.push(@wear.pop)
+        send "You remove a #{@wear.last} from your head. "
+        other_players.each { |p| p.send "#{name} removes a  #{@wear.last} from his head. "}
+        @inv.push(@wear.pop)
       end
     end
 
@@ -77,16 +77,14 @@ module MUD
         send "You aren't carrying anything."
       else
          send "You are carrying:"
-         @inv.each { |m| send "#{m.itemcolor} #{m.itemname}"}  
-         
-         #{@room.item.last}    
+         @inv.each { |m| send "#{m.item}"}    
       end
 
       if @wear.empty?
         send "You aren't wearing anything."
       else
         send "\n You are balancing the following on your head:"
-        @wear.each { |m| send "#{m.itemcolor} #{m.itemname}"}     
+        @wear.each { |m| send "#{m.item}"}     
       end  
         send "You sense that your attack power is #{@inv.length}"
         send "You sense that your defense is #{@wear.length}"

@@ -1,14 +1,15 @@
 module MUD
   class MagicalItem
-    attr_accessor :itemname, :itemcolor
+    attr_accessor :name, :color, :item
 
-    def initialize(itemname, itemcolor)
-      @itemname = itemname
-      @itemcolor = itemcolor
+    def initialize(name, color)
+      @name = name
+      @color = color
+      @item = "a #{color} #{name}"     
     end
     
     def to_s
-      "a #{itemcolor} #{itemname}"      
+      "a #{color} #{name}"      
     end
   end
 end
