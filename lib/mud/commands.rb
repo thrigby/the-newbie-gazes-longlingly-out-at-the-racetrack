@@ -88,6 +88,82 @@ module MUD
       end  
         send "You sense that your attack power is #{@inv.length}"
         send "You sense that your defense is #{@wear.length}"
-    end       
+    end  
+    
+    def do_smile(target)
+      target = find_player_by_name(target)
+      if target == nil
+        send "You smile."
+        other_players.each { |p| p.send "#{name} smiles."}
+      else
+        if target
+          if target.name.downcase == name.downcase
+            send "You smile at yourself. Because that's what creepy seals do."
+            other_players.each { |p| p.send "#{name} smiles at himself. He are thinking about something."}
+          else
+          send "You smile at #{target.name}."
+          target.send "#{name} smiles at you showing rows and rows of razor-sharp teeth.".capitalize          
+          observers(target).each { |p| p.send "#{name} smiles at #{target.name} revealing years of tawdry British dental work."}
+          end
+        else
+          send "NOBODY HOME"
+        end  
+      end
+    end    
+
+    def do_cold_eye(target)
+        target = find_player_by_name(target)
+        if target == nil
+          send "You gaze at the horizon and calmly thumb shells into your blue-steel shotgun."
+          other_players.each { |p| p.send "#{name} gazes at the horizon and calmly thumb shells into his blue-steel shotgun."}
+        else
+          if target
+            if target.name.downcase == name.downcase
+              send "You thumb shells into your blue-steel shotgun and put it in your mouth."
+              other_players.each { |p| p.send "#{name} thumbs shells into his blue-steel shotgun and puts it in his mouth."}
+              EventMachine::Timer.new(2) do
+                send "You pull the trigger and BLAM! Baby Seal brains EVERYWHERE! Nooooo!"
+                other_players.each { |p| p.send "#{name} pulls the trigger and BLAM!\nBaby Seal brains everywhere!" }
+                EventMachine::Timer.new(2) do
+                other_players.each { |p| p.send "You scream."}
+                @room.add_item MagicalItem.new "baby seal brain", "bloody"
+                @room.add_item MagicalItem.new "corpse of #{name}", "sad little"              
+                end
+                con.close_connection_after_writing
+                @room.players.delete self 
+              end           
+            else
+            send "You gaze at #{target.name} with narrow, cold eyes and thumb shells into your blue-steel shotgun."
+            target.send "#{name} gazes at you with narrow, cold eyes and thumbs shells into his blue-steel shotgun.".capitalize          
+            observers(target).each { |p| p.send "#{name} gazes at  #{target.name} with cold eyes, thumbing shells into his blue-steel shotgun."}
+            end
+          else
+            send "NOBODY HOME"
+          end  
+        end
+    end      
+    
+    def do_flex(target)
+      target = find_player_by_name(target)
+      if target == nil
+        send "You flex your baby seal blubber."
+        other_players.each { |p| p.send "#{name} flexes."}
+      else
+        if target
+          if target.name.downcase == name.downcase
+            send "You flex kiss your flipper."
+            other_players.each { |p| p.send "#{name} flexes and kisses his flipper."}
+          else
+          send "You flex at #{target.name}."
+          target.send "#{name} flexes at you.".capitalize          
+          observers(target).each { |p| p.send "#{name} flexes at #{target.name}."}
+          end
+        else
+          send "NOBODY HOME"
+        end  
+      end
+    end    
+    
+         
   end
 end

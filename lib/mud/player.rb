@@ -50,11 +50,19 @@ module MUD
 #      array.reject {|item| block } → an_array
 #      Returns a new array containing the items in self for which the block is not true.      
     end
-
+    
+    def observers(target)
+      a = @room.players.reject { |p| p == self}
+      b = a.reject { |t| t == target }
+    end
+    
     def command(cmd, arg)
       @dirty = true
       case cmd
+        when "flex"; do_flex(arg)
         when "digwest"; do_dig_west
+        when "cold"; do_cold_eye(arg)
+ #       when "go"; do_go(arg) soon, precious... soon...
         when "smile"; do_smile(arg)
         when "west"; do_west
         when "sc"; do_score
@@ -111,16 +119,6 @@ module MUD
         target.wear.each do |item| 
           send "#{item}"
         end        
-      else
-        send "NOBODY HOME"
-      end  
-    end
-
-    def do_smile(name)
-      target = find_player_by_name(name)
-      if target
-        send "You smile at #{target.name}."
-        target.send "#{name} smiles at you showing rows and rows of razor-sharp teeth.".capitalize
       else
         send "NOBODY HOME"
       end  
@@ -229,7 +227,7 @@ module MUD
 end
 
 =begin
-Orion:  def attach(item)
+def attach(item)
  me:  you fixed my smile code
  Orion:  @attached = item
 end
