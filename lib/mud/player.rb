@@ -136,9 +136,9 @@ module MUD
       # also - target.name is a pain to type ... if you have Player#to_s return @name we could just say 'target' here...
       if name
         target = find_player_by_name!(name)
-        act_spit(target) { |c| "#{c.subject} #{c.verb} on #{c.target}." }
+        act(:spit, target) { |c| "#{c.subject} #{c.verb} on #{c.target}." }
       else
-        act_spit { |c| "#{c.subject} #{c.verb}." }
+        act(:spit) { |c| "#{c.subject} #{c.verb}." }
       end
     end
 
@@ -301,14 +301,10 @@ module MUD
       end
     end      
 
-    def method_missing(method, *args, &block)
-      if method.to_s =~ /^act_(.+)/
-        @room.players.each do |observer|
-          c = Context.new :subject => self, :target => args.first, :verb => $1, :observer => observer
-          observer.send block.call(c)
-        end
-      else
-        super method, *args, &block
+    def act(verb, target = nil)
+      @room.players.each do |observer|
+        c = Context.new :subject => self, :target => target, :verb => verb.to_s, :observer => observer
+        observer.send yield(c)
       end
     end
 

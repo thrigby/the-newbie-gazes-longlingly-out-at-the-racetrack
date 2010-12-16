@@ -9,9 +9,9 @@ module MUD
 
     def subject
       if @observer == @subject
-        "you"
+        "You"
       else
-        name_of @subject
+        name_of(@subject).capitalize
       end
     end
 
