@@ -1,4 +1,5 @@
 module MUD
+  class MissingTarget < RuntimeError; end
   module Commands
     def do_help
       send "                BABY SEAL MUD COMMANDS"
@@ -18,24 +19,32 @@ module MUD
       send "         Drop: you drop a magic item on the ground."
       send "         glue: glue two objects together. note- if you have three or more objects in your inventory, you'll lose them."
       send " Capitalized commands have shortcuts, the first letter of the command. l for look, w for wear, and so on. note: b = bounce, bb = blow bubble"
-      send "\n Score or 'sc' gives you some vague information that will probably not be all that helpful. This game is completely rigged and you really don't stand any sort of chance."             
+      send "\n Score or 'sc' gives you some vague information that will probably not be all that helpful. This game is completely rigged and you really don't stand any sort of chance."
     end
-    
+
+    # orion: seems like you'd want to have these be @blubber instead of @str and @beadiness instead of @dex
     def do_score
       send "             Blubber: #{@str}"
       send "       Eye-Beadiness: #{@dex}"
       send "               Pluck: #{@cool}"
       send "            Cuteness: #{@luck}"
       send "      Whisker Length: #{@wis}"
-      send "                                XP: #{@exp}"     
-    end  
+      send "                                XP: #{@exp}"
+    end
+
+    # orion: seems it should be either
+    # @flop = true
+    # or
+    # @bounce = false
+    # or if you want other positions
+    # @position = :flop
 
     def do_flop
       send "You grunt adorably as you flop down on the ground to rest."
       other_players.each { |p| p.send "#{name} flops down onto the ground with an adorable little grunt."}
       @position = true
     end
-   
+
     def do_wear
       if @inv.empty?
         send "Your inventory is empty."
@@ -60,7 +69,7 @@ module MUD
       unless @position
         send "One cannot chew gum and bounce at the same time."
       return
-      end      
+      end
       if @inventorybg > 0
         send "You begin chewing one of your magic pieces of bubblegum."
         other_players.each { |p| p.send "#{name} begins chewing a piece of magic bubblegum."}
@@ -77,19 +86,26 @@ module MUD
         send "You aren't carrying anything."
       else
          send "You are carrying:"
-         @inv.each { |m| send "#{m.item}"}    
+         @inv.each { |m| send "#{m.item}"}
       end
 
       if @wear.empty?
         send "You aren't wearing anything."
       else
         send "\n You are balancing the following on your head:"
-        @wear.each { |m| send "#{m.item}"}     
-      end  
+        @wear.each { |m| send "#{m.item}"}
+      end
         send "You sense that your attack power is #{@inv.length}"
         send "You sense that your defense is #{@wear.length}"
-    end  
-    
+    end
+
+    # orion: this code has 3 states
+    # 1) no target specified
+    # 2) target specified but no one there
+    # 3) target specified and found
+    # since find_player is always called (even if no name is passed) and returns nil if its not found
+    # you are going to do "You smile" and never NOBODY HOME
+
     def do_smile(target)
       target = find_player_by_name(target)
       if target == nil
@@ -102,14 +118,14 @@ module MUD
             other_players.each { |p| p.send "#{name} smiles at #{pospronoun}self. #{subpronoun} must be thinking about something."}
           else
           send "You smile at #{target.name}."
-          target.send "#{name} smiles at you showing rows and rows of razor-sharp teeth.".capitalize          
+          target.send "#{name} smiles at you showing rows and rows of razor-sharp teeth.".capitalize
           observers(target).each { |p| p.send "#{name} smiles at #{target.name} revealing years of tawdry British dental work."}
           end
         else
           send "NOBODY HOME"
-        end  
+        end
       end
-    end    
+    end
 
     def do_cold_eye(target)
         target = find_player_by_name(target)
@@ -125,24 +141,27 @@ module MUD
                 send "You pull the trigger and BLAM! Baby Seal brains EVERYWHERE! Nooooo!"
                 other_players.each { |p| p.send "#{name} pulls the trigger and BLAM!\n#{pospronoun} Baby Seal brains go everywhere!" }
                 EventMachine::Timer.new(2) do
+                # orion: always indent blocks for readability
+                # this and the three lines below should be indented
+                # awesome block of code by the way
                 other_players.each { |p| p.send "You scream."}
                 @room.add_corpse MagicalItem.new "baby seal brain", "bloody"
-                @room.add_corpse MagicalItem.new "corpse of #{name}", "sad little"              
+                @room.add_corpse MagicalItem.new "corpse of #{name}", "sad little"
                 end
                 con.close_connection_after_writing
-                @room.players.delete self 
-              end           
+                @room.players.delete self
+              end
             else
             send "You gaze at #{target.name} with narrow, cold eyes and thumb shells into your blue-steel shotgun."
-            target.send "#{name} gazes at you with narrow, cold eyes and thumbs shells into #{pospronoun} blue-steel shotgun.".capitalize          
+            target.send "#{name} gazes at you with narrow, cold eyes and thumbs shells into #{pospronoun} blue-steel shotgun.".capitalize
             observers(target).each { |p| p.send "#{name} gazes at  #{target.name} with cold eyes, thumbing shells into #{pospronoun} blue-steel shotgun."}
             end
           else
             send "NOBODY HOME"
-          end  
+          end
         end
-    end      
-    
+    end
+
     def do_flex(target)
       target = find_player_by_name(target)
       if target == nil
@@ -171,6 +190,29 @@ module MUD
       observers(target).each { |p| p.send "#{name} makes a tiny squeezetoy squeek and flops towards #{target.name}!"}
             
       n = 0
+
+      # orion: holy crap this is awesome
+      # did not toally read but the Diku way to do this was
+      # to have a function like
+      # 
+      # def start_fighting(target)
+      #    MUD::Fighting << self unless MUD::Fighting.include? self
+      #    @fighting = target
+      # end
+      #
+      # def stop_fighting
+      #    MUD::Fighting.delete self
+      #    @fighting = nil
+      # end
+      # 
+      # in the server loop - way out in server.rb - inside the EventMachine::run
+      #
+      # EventMachine::PeriodicTimer.new(5) do
+      #   MUD::Fighting.each do |attacker|
+      #      attacker.perform_attack
+      #   end   
+      # end
+
        timer = EventMachine::PeriodicTimer.new(5) do
 
 #offense swing!       

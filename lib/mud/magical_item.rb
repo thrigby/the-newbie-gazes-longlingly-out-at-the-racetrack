@@ -5,6 +5,7 @@ module MUD
     def initialize(name, color)
       @name = name
       @color = color
+      # orion: this seems strangely redundant to have item with @item
       @item = "#{color} #{name}"     
     end
     
