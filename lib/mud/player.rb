@@ -1,17 +1,22 @@
 module MUD
   class Player
     include Commands
-    attr_accessor :name, :hp, :vit, :con, :dirty, :bounce, :wear
+    attr_accessor :name, :hp, :vit, :con, :dirty, :bounce, :wear, :inv, :gend, :pospronoun, :objpronoun, :subpronoun, :str, :dex, :cool, :luck, :wis, :embed
 
     def initialize(name, con)
       @name = name
-      @hp = 10
+      @hp = 100
       @con = con
       @vit = 12
       @dirty = true
       @inventorybg = 10
       @inv = []
       @wear = []
+      @embed = []
+      @gend = gend
+      @pospronoun = pospronoun
+      @objpronoun = objpronoun
+      @subpronoun = subpronoun      
       @str = rand(10) + 1
       @dex = rand(10) + 1
       @cool = rand(10) + 1
@@ -59,7 +64,9 @@ module MUD
     def command(cmd, arg)
       @dirty = true
       case cmd
+        when "kill"; do_kill(arg)
         when "flex"; do_flex(arg)
+        when "sexchange"; do_sexchange(arg)
         when "digwest"; do_dig_west
         when "cold"; do_cold_eye(arg)
  #       when "go"; do_go(arg) soon, precious... soon...
@@ -110,20 +117,19 @@ module MUD
       send "You have created a new room!"
       other_players.each { |p| p.send "#{name} digs a new room to the west."}
     end
-
+=begin
     def do_exa(name)
       target = find_player_by_name(name)
       if target
         send "You examine #{target.name}."
         send "They have #{target.wear.size} things."
         target.wear.each do |item| 
-          send "#{item}"
-        end        
+        send "#{item}"        
       else
         send "NOBODY HOME"
       end  
     end
-
+=end
     def do_say(message)
       send "You say '#{message}'"
       other_players.each { |p| p.send "#{name} says '#{message}'" }
@@ -212,7 +218,7 @@ module MUD
         if @inv.empty?
           send "You need at least two things in your inventory to glue together."
         else
-          send "You carefully glue #{@inv[0]} to  #{@inv[1]} with your magical bubblegum."
+          send "You carefully glue #{@inv[0]} to #{@inv[1]} with your magical bubblegum."
           other_players.each { |p| p.send "#{name} carefully glues #{@inv[0]} to  #{@inv[1]} with his magical bubblegum."}         
           @inv << MagicalItem.new("glued to #{@inv.shift}","#{@inv.shift}")
         end  
@@ -223,35 +229,31 @@ module MUD
       con.send_data "h:#{hp} v:#{vit}> "
       @dirty = false
     end
+    
+  def do_sexchange(gend)
+    if gend == "male"
+      @pospronoun = "his"
+      @objpronoun = "him"
+      @subpronoun = "he"
+      send "You pray to the baby seal gods and are granted a penis!"
+      other_players.each { |p| p.send "#{name} prays to the baby seal gods real hard and is granted a penis!"}
+    else
+      if gend == "female"
+        @pospronoun = "her"
+        @objpronoun = "her"
+        @subpronoun = "she"
+        send "You pray to the baby seal gods and are granted a vagina!"
+        other_players.each { |p| p.send "#{name} prays to the baby seal gods real hard and is granted a vagina!"}
+      else
+        if gend == "neuter"
+          @pospronoun = "its"
+          @objpronoun = "it"
+          @subpronoun = "it"
+          send "You pray to the baby seal gods and are granted a smooth, plastic, groinal nub!"
+          other_players.each { |p| p.send "#{name} prays to the baby seal gods real hard and is granted a smooth, plastic, groinal nub!"}
+      end
+      end      
+    end      
   end
 end
-
-=begin
-def attach(item)
- me:  you fixed my smile code
- Orion:  @attached = item
 end
-def to_s
-if @attached
-"#{@attached} glued to a #{color} #{name}"
-else
-"a #{color} #{name}"
-end
-en
- me:  ponder
- Orion:  oh wait it gets better
-def attach(item)
-if @attached
-@attached.attach(item)
-else
-@attached = item
-end
-end
-(if I already have an item attached to me - instead glue it to the item i'm attached to)
-can create a list of items of any depth
-also the to_s will show
- me:  hmmm
- Orion:  "a glued to b glued to c glued to d"
-and dissassemble is easy
-
-=end

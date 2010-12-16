@@ -14,6 +14,11 @@ module MUD
     def add_item(item)
       @players.each { |p| p.send "#{item} appears!".capitalize }   
       @item << item
-    end  
+    end
+    
+    def add_corpse(item)
+      @players.each { |p| p.send "#{item} flips through the air and lands on the ground.".capitalize}  
+      @item << item
+    end
   end  
 end
