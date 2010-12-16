@@ -1,3 +1,4 @@
+require 'mud/context'
 require 'mud/room'
 require 'mud/commands'
 require 'mud/player'

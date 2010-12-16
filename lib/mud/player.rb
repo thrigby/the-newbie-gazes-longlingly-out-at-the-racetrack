@@ -13,10 +13,10 @@ module MUD
       @inv = []
       @wear = []
       @embed = []
-      @gend = gend
-      @pospronoun = pospronoun
-      @objpronoun = objpronoun
-      @subpronoun = subpronoun      
+      @gend = "neuter"
+      @pospronoun = "its"
+      @objpronoun = "it"
+      @subpronoun = "it"
       @str = rand(10) + 1
       @dex = rand(10) + 1
       @cool = rand(10) + 1
@@ -25,7 +25,7 @@ module MUD
       @exp = 0
       @position = true
       @readytoblow = false
-      send "Welcome #{name}! You are a baby seal!"         
+      send "Welcome #{name}! You are a baby seal!"
       prompt
     end
 
@@ -38,7 +38,7 @@ module MUD
       @room = room
       @room.players.push self
       other_players.each { |p| p.send "#{name} has arrived." }
-    end 
+    end
 
     def send(data)
       unless @dirty
@@ -115,6 +115,7 @@ module MUD
     end
 
     def find_player_by_name(name)
+      return self if name == "me"
       @room.players.detect { |p| p.name.downcase == name.downcase}
     end
 
@@ -135,11 +136,9 @@ module MUD
       # also - target.name is a pain to type ... if you have Player#to_s return @name we could just say 'target' here...
       if name
         target = find_player_by_name!(name)
-        send "You spit on #{target.name}."
-        other_players.each { |p| p.send "#{name} spits on #{target == p ? "you" : target.name}." }
+        act_spit(target) { |c| "#{c.subject} #{c.verb} on #{c.target}." }
       else
-        send "You spit."
-        other_players.each { |p| p.send "#{name} spits."}
+        act_spit { |c| "#{c.subject} #{c.verb}." }
       end
     end
 
@@ -262,48 +261,63 @@ module MUD
       @dirty = false
     end
     
-  def do_sexchange(gend)
-    # orion:
-    # don't store more info than you need to - compute what you can... otherwise you end up with bugs 
-    # where you accidenty get "his" and "she" on the same player and the game seems retarded
-    # do this instead
-    #
-    # @gender = :male or @gender = :female
-    #
-    # then compute the pronouns instead of store them
-    #
-    # def pospronoun
-    #   case @gender
-    #   when :male   then "his"
-    #   when :female then "her"
-    #   else              "its"
-    #   end
-    # end
-    #
-  
-    if gend == "male"
-      @pospronoun = "his"
-      @objpronoun = "him"
-      @subpronoun = "he"
-      send "You pray to the baby seal gods and are granted a penis!"
-      other_players.each { |p| p.send "#{name} prays to the baby seal gods real hard and is granted a penis!"}
-    else
-      if gend == "female"
+    def do_sexchange(gend)
+      # orion:
+      # don't store more info than you need to - compute what you can... otherwise you end up with bugs 
+      # where you accidenty get "his" and "she" on the same player and the game seems retarded
+      # do this instead
+      #
+      # @gender = :male or @gender = :female
+      #
+      # then compute the pronouns instead of store them
+      #
+      # def pospronoun
+      #   case @gender
+      #   when :male   then "his"
+      #   when :female then "her"
+      #   else              "its"
+      #   end
+      # end
+      #
+    
+      if gend == "male"
+        @pospronoun = "his"
+        @objpronoun = "him"
+        @subpronoun = "he"
+        send "You pray to the baby seal gods and are granted a penis!"
+        other_players.each { |p| p.send "#{name} prays to the baby seal gods real hard and is granted a penis!"}
+      elsif gend == "female"
         @pospronoun = "her"
         @objpronoun = "her"
         @subpronoun = "she"
         send "You pray to the baby seal gods and are granted a vagina!"
         other_players.each { |p| p.send "#{name} prays to the baby seal gods real hard and is granted a vagina!"}
-      else
-        if gend == "neuter"
-          @pospronoun = "its"
-          @objpronoun = "it"
-          @subpronoun = "it"
-          send "You pray to the baby seal gods and are granted a smooth, plastic, groinal nub!"
-          other_players.each { |p| p.send "#{name} prays to the baby seal gods real hard and is granted a smooth, plastic, groinal nub!"}
+      elsif gend == "neuter"
+        @pospronoun = "its"
+        @objpronoun = "it"
+        @subpronoun = "it"
+        send "You pray to the baby seal gods and are granted a smooth, plastic, groinal nub!"
+        other_players.each { |p| p.send "#{name} prays to the baby seal gods real hard and is granted a smooth, plastic, groinal nub!"}
       end
-      end      
     end      
+
+    def method_missing(method, *args, &block)
+      if method.to_s =~ /^act_(.+)/
+        @room.players.each do |observer|
+          c = Context.new :subject => self, :target => args.first, :verb => $1, :observer => observer
+          observer.send block.call(c)
+        end
+      else
+        super method, *args, &block
+      end
+    end
+
+    def can_see?(target)
+      true ## darkness/blindness/invisibility
+    end
+
+    def berserk?
+      false
+    end
   end
-end
 end
