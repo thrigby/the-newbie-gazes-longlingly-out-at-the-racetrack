@@ -112,6 +112,7 @@ module MUD
     end
 
     def find_player_by_name(name)
+      return nil if name.nil?
       return self if name == "me"
       @room.players.detect { |p| p.name.downcase == name.downcase}
     end
