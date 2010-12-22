@@ -1,7 +1,7 @@
 module MUD
   class Player
     include Commands
-    attr_accessor :name, :hp, :vit, :con, :dirty, :bounce, :wear, :inv, :gend, :pospronoun, :objpronoun, :subpronoun, :str, :dex, :cool, :luck, :wis, :embed
+    attr_accessor :name, :hp, :vit, :con, :dirty, :bounce, :wear, :inv, :gender, :str, :dex, :cool, :luck, :wis, :embed
 
     def initialize(name, con)
       @name = name
@@ -13,17 +13,14 @@ module MUD
       @inv = []
       @wear = []
       @embed = []
-      @gend = "neuter"
-      @pospronoun = "its"
-      @objpronoun = "it"
-      @subpronoun = "it"
+      @gender = :male
       @str = rand(10) + 1
       @dex = rand(10) + 1
       @cool = rand(10) + 1
       @luck = rand(10) + 1
       @wis = rand(10) + 1
       @exp = 0
-      @position = true
+      @position = :flop
       @readytoblow = false
       send "Welcome #{name}! You are a baby seal!"
       prompt
@@ -67,7 +64,7 @@ module MUD
         case cmd
           when "kill"; do_kill(arg)
           when "flex"; do_flex(arg)
-          when "sexchange"; do_sexchange(arg)
+          when "sexchange"; do_sexchange
           when "digwest"; do_dig_west
           when "cold"; do_cold_eye(arg)
    #       when "go"; do_go(arg) soon, precious... soon...
@@ -189,39 +186,34 @@ module MUD
     def do_drop
       if @inv.empty?
         send "you're not carrying anything to drop."
-      else
-        send "You drop #{@inv.last} on the ground."  
-        other_players.each { |p| p.send "#{name} drops #{@inv.last} on the ground."}
-      @room.item.push(@inv.pop)
+      else    
+        act(:drop) { |c| "#{c.subject} #{c.verb} #{@inv.last} on the ground." }
+        @room.item.push(@inv.pop)
       end    
     end
 
     def do_take
-      if @room.item.empty?
-         send "empty room"
+      do_get
+      if @room.item.empty?         
       else
-        send "You flip #{@room.item.last} onto your back."
-        other_players.each { |p| p.send "#{name} flips #{@room.item.last} on his back."}
-        @inv << @room.item.pop             
+        @room.item.count.times do
+        act(:pick) { |c| "#{c.subject} #{c.verb} up #{@room.item.last}." }
+        @inv << @room.item.pop
+        end
       end 
     end
 
     def do_bounce
-      send "You start bouncing up and down!"
-      other_players.each { |p| p.send "#{name} starts bouncing up and down!"}
       bouncygum = rand(4) + 1   
       @room.bubblegum += bouncygum
-      @position = false
-      send "You make #{bouncygum} magic pieces of bubblegum!"
-      other_players.each { |p| p.send "#{name} makes #{bouncygum} magic pieces of bubblegum!" }  
+      @position = :bounce
+      act(:bounce) { |c| "#{c.subject} #{c.verb} up and down and #{bouncygum} pieces of magic bubblegum appear!" }
     end
 
     def do_get
-      if @room.bubblegum == 0
-        send "There is no bubblegum here!"
+      if @room.bubblegum == 0        
       else
-        send "You pick up #{@room.bubblegum} pieces of magical bubblegum."
-        other_players.each { |p| p.send "#{name} picks up #{@room.bubblegum} pieces of magical bubblegum."}
+        act(:pick) { |c| "#{c.subject} #{c.verb} up #{@room.bubblegum} pieces of magical bubblegum." }
         @inventorybg += @room.bubblegum
         @room.bubblegum = 0
       end
@@ -231,8 +223,7 @@ module MUD
       unless @readytoblow
         send "You must chew the bubblegum before you can blow a bubble!"
       else
-        send "You blow a bright red, magic bubble until it POPS!"
-        other_players.each { |p| p.send "#{name} blows a bright red magic bubble until it POPS!"}
+        act(:blow) { |c| "#{c.subject} #{c.verb} a bright red, maggic bubble until it POPS!"}
         @readytoblow = false
         color = ["red-painted", "green-painted", "blue-painted", "bloody", "rusty", "used", "rancid", "holy", "rubber", "ragged", "moldy", "tasteful", "ceremonial", "shag-carpeted", "dusty", "rotting", "solid-gold"]
         cc = color[rand(color.size)]
@@ -249,8 +240,7 @@ module MUD
         if @inv.empty?
           send "You need at least two things in your inventory to glue together."
         else
-          send "You carefully glue #{@inv[0]} to #{@inv[1]} with your magical bubblegum."
-          other_players.each { |p| p.send "#{name} carefully glues #{@inv[0]} to  #{@inv[1]} with his magical bubblegum."}         
+          act(:glue) { |c| "#{c.subject} carefully #{c.verb} #{@inv[0]} to #{@inv[1]} with a gooey wad of magic bubblegum."}       
           @inv << MagicalItem.new("glued to #{@inv.shift}","#{@inv.shift}")
         end  
       end
@@ -260,54 +250,40 @@ module MUD
       con.send_data "h:#{hp} v:#{vit}> "
       @dirty = false
     end
-    
-    def do_sexchange(gend)
-      # orion:
-      # don't store more info than you need to - compute what you can... otherwise you end up with bugs 
-      # where you accidenty get "his" and "she" on the same player and the game seems retarded
-      # do this instead
-      #
-      # @gender = :male or @gender = :female
-      #
-      # then compute the pronouns instead of store them
-      #
-      # def pospronoun
-      #   case @gender
-      #   when :male   then "his"
-      #   when :female then "her"
-      #   else              "its"
-      #   end
-      # end
-      #
-    
-      if gend == "male"
-        @pospronoun = "his"
-        @objpronoun = "him"
-        @subpronoun = "he"
-        send "You pray to the baby seal gods and are granted a penis!"
-        other_players.each { |p| p.send "#{name} prays to the baby seal gods real hard and is granted a penis!"}
-      elsif gend == "female"
-        @pospronoun = "her"
-        @objpronoun = "her"
-        @subpronoun = "she"
-        send "You pray to the baby seal gods and are granted a vagina!"
-        other_players.each { |p| p.send "#{name} prays to the baby seal gods real hard and is granted a vagina!"}
-      elsif gend == "neuter"
-        @pospronoun = "its"
-        @objpronoun = "it"
-        @subpronoun = "it"
-        send "You pray to the baby seal gods and are granted a smooth, plastic, groinal nub!"
-        other_players.each { |p| p.send "#{name} prays to the baby seal gods real hard and is granted a smooth, plastic, groinal nub!"}
-      end
-    end      
 
+    def pospronoun
+      case @gender
+        when :male   then "his"
+        when :female then "her"
+        else              "its"
+      end
+    end
+    
+    def objpronoun
+      case @gender
+        when :male     then "him"
+        when :female   then "her" 
+        else                "its"
+      end
+    end    
+
+    def do_sexchange
+      if gender == :male
+        @gender = :female
+        act(:grow) { |c| "#{c.subject} #{c.verb} girl parts." }
+      else
+         @gender = :male
+        act(:grow) { |c| "#{c.subject} #{c.verb} boy parts." }
+      end
+    end        
+    
     def act(verb, target = nil)
       @room.players.each do |observer|
-        c = Context.new :subject => self, :target => target, :verb => verb.to_s, :observer => observer
+        c = Context.new :subject => self, :target => target, :verb => verb.to_s, :observer => observer   
         observer.send yield(c)
       end
     end
-
+    
     def can_see?(target)
       true ## darkness/blindness/invisibility
     end
@@ -317,3 +293,37 @@ module MUD
     end
   end
 end
+
+
+# orion:
+# don't store more info than you need to - compute what you can... otherwise you end up with bugs 
+# where you accidenty get "his" and "she" on the same player and the game seems retarded
+# do this instead
+#
+# @gender = :male or @gender = :female
+#
+# then compute the pronouns instead of store them
+#
+# def pospronoun
+#   case @gender
+#   when :male   then "his"
+#   when :female then "her"
+#   else              "its"
+#   end
+# end
+#
+
+#    same same!
+#    def act(verb, target = nil)
+#          @room.players.each do |observer|
+#            c = Context.new :subject => self, :target => target, :verb => verb.to_s, :observer => observer
+#            observer.send yield(c)
+#          end
+#        end
+
+#        def act(verb, target = nil, &block)
+#          @room.players.each do |observer|
+#            c = Context.new :subject => self, :target => target, :verb => verb.to_s, :observer => observer
+#            observer.send block.call(c)
+#          end
+#        end

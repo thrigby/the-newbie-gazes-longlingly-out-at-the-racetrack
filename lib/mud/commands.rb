@@ -4,7 +4,7 @@ module MUD
     def do_help
       send "                BABY SEAL MUD COMMANDS"
       send "          say: just type say and your message"
-      send "         Look: examine your immediate surroundings."
+      send "         Look: examine your immediate surroundings or other seals."
       send "         exit: leave the game"
       send "         help: what you're looking at right now."
       send "       Bounce: makes magic bubblegum. also how you move."
@@ -12,10 +12,15 @@ module MUD
       send "          Get: pick up magic bubblegum."
       send "         Chew: prepare for magic! precurser to blow."
       send "         Blow: make powerful tools to aid you!"
-      send "         Take: picks up the most recent item you made."
+      send "         Take: greedy you, you pick up all of the items in the room."
       send "    Inventory: examine your inventory."
-      send "         Wear: wield that magic!"
-      send "       Remove: un-wield that magic!"
+      send "         Wear: wear that magic!"
+      send "        wield: wield that magic!"
+      send "       Remove: un-wear that magic!"
+      send "         cold: go out in style"
+      send "      socials: flex, spit, smile"
+      send "    sexchange: change those personal pronouns"
+      send "         kill: kill target."
       send "         Drop: you drop a magic item on the ground."
       send "         glue: glue two objects together. note- if you have three or more objects in your inventory, you'll lose them."
       send " Capitalized commands have shortcuts, the first letter of the command. l for look, w for wear, and so on. note: b = bounce, bb = blow bubble"
@@ -32,47 +37,37 @@ module MUD
       send "                                XP: #{@exp}"
     end
 
-    # orion: seems it should be either
-    # @flop = true
-    # or
-    # @bounce = false
-    # or if you want other positions
-    # @position = :flop
-
     def do_flop
-      send "You grunt adorably as you flop down on the ground to rest."
-      other_players.each { |p| p.send "#{name} flops down onto the ground with an adorable little grunt."}
-      @position = true
+       act(:flop) { |c| "#{c.subject} #{c.verb} on the ground with an adorable little grunt." }
+       @position = :flop
     end
 
-    def do_wear
+    def do_wear                     #set target self? pronoun
       if @inv.empty?
         send "Your inventory is empty."
-      else
-        send "You carefully balance #{@inv.last} on your head."
-        other_players.each { |p| p.send "#{name} carefully balances a #{@inv.last} on his head. "}
+      else  
+        act(:balance) { |c| "#{c.subject} carefully #{c.verb} #{@inv.last} on head." }
         @wear.push(@inv.pop)
       end
     end
 
-    def do_remove
+    def do_remove                 #set target self? pronoun
       if @wear.empty?
         send "You aren't wearing anything to remove."
       else
-        send "You remove a #{@wear.last} from your head. "
-        other_players.each { |p| p.send "#{name} removes a  #{@wear.last} from his head. "}
+        
+        act(:remove) { |c| "#{c.subject} #{c.verb} #{@wear.last} from  head."}
         @inv.push(@wear.pop)
       end
     end
 
     def do_chew
-      unless @position
+      unless @position == :flop
         send "One cannot chew gum and bounce at the same time."
       return
       end
       if @inventorybg > 0
-        send "You begin chewing one of your magic pieces of bubblegum."
-        other_players.each { |p| p.send "#{name} begins chewing a piece of magic bubblegum."}
+        act(:chew) { |c| "#{c.subject} #{c.verb} a piece of magical bubblegum."}
         @inventorybg -= 1
         @readytoblow = true
       else
@@ -106,24 +101,14 @@ module MUD
     # since find_player is always called (even if no name is passed) and returns nil if its not found
     # you are going to do "You smile" and never NOBODY HOME
 
-    def do_smile(target)
-      target = find_player_by_name(target)
-      if target == nil
-        send "You smile."
-        other_players.each { |p| p.send "#{name} smiles."}
+    def do_smile(name)
+      # orion: note I can aboid the NOBDY home thing here since it will jump up to the exception handler above
+      # also - target.name is a pain to type ... if you have Player#to_s return @name we could just say 'target' here...
+      if name
+        target = find_player_by_name!(name)
+        act(:smile, target) { |c| "#{c.subject} #{c.verb} at #{c.target}." }
       else
-        if target
-          if target.name.downcase == name.downcase
-            send "You smile at yourself. Because that's what creepy seals do."
-            other_players.each { |p| p.send "#{name} smiles at #{pospronoun}self. #{subpronoun} must be thinking about something."}
-          else
-          send "You smile at #{target.name}."
-          target.send "#{name} smiles at you showing rows and rows of razor-sharp teeth.".capitalize
-          observers(target).each { |p| p.send "#{name} smiles at #{target.name} revealing years of tawdry British dental work."}
-          end
-        else
-          send "NOBODY HOME"
-        end
+        act(:smile) { |c| "#{c.subject} #{c.verb}." }
       end
     end
 
