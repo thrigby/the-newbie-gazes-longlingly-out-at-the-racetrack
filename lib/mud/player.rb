@@ -198,7 +198,7 @@ module MUD
       if @room.item.empty?         
       else
         @room.item.count.times do
-        act(:pick) { |c| "#{c.subject} #{c.verb} up #{@room.item.last}." }
+        act(:pick) { |c| "#{c.subject} #{c.verb} up #{@room.item.last} and flips it on #{c.pospronoun} back." }
         @inv << @room.item.pop
         end
       end 
@@ -273,15 +273,16 @@ module MUD
         @gender = :female
         act(:grow) { |c| "#{c.subject} #{c.verb} girl parts." }
       else
-         @gender = :male
-        act(:grow) { |c| "#{c.subject} #{c.verb} boy parts." }
+        @gender = :male
+        act(:chop) { |c| "#{c.subject} #{c.zoom!} boy parts." }
       end
     end        
-    
-    def act(verb, target = nil)
+        
+    def act(verb, target = nil, &blk)
       @room.players.each do |observer|
-        c = Context.new :subject => self, :target => target, :verb => verb.to_s, :observer => observer   
-        observer.send yield(c)
+        c = Context.new :subject => self, :target => target, :verb => verb.to_s, :observer => observer
+                 
+        observer.send blk.call(c)
       end
     end
     
