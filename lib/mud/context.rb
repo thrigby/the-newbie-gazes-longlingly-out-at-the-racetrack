@@ -65,11 +65,11 @@ module MUD
     end
     
     def to_s
-      @subject.to_s
+      self.subject
     end
-      
+  
+          
     def method_missing(method, *args)
-      puts "METHOD_MISSING CALLED #{method.inspect} #{args.inspect}"
       if method.to_s =~ /^(.+)\!$/
         verb = $1
         if @observer == @subject

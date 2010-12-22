@@ -29,11 +29,11 @@ module MUD
 
     # orion: seems like you'd want to have these be @blubber instead of @str and @beadiness instead of @dex
     def do_score
-      send "             Blubber: #{@str}"
-      send "       Eye-Beadiness: #{@dex}"
-      send "               Pluck: #{@cool}"
-      send "            Cuteness: #{@luck}"
-      send "      Whisker Length: #{@wis}"
+      send "             Blubber: #{@blubber}"
+      send "       Eye-Beadiness: #{@bead}"
+      send "               Pluck: #{@pluck}"
+      send "            Cuteness: #{@cute}"
+      send "      Whisker Length: #{@whisker}"
       send "                                XP: #{@exp}"
     end
 
@@ -209,7 +209,7 @@ module MUD
          send "You swing #{@inv.last} at #{target.name}"
          target.send "#{name} swings #{@inv.last} at you"
          observers(target).each { |p| p.send "#{name} swings #{@inv.last} at #{target.name}"}
-         end         
+         end 
 
          x = rand(10) + @inv.length + @cool + @dex
          y = rand(10) + target.wear.length + target.dex       
@@ -259,6 +259,14 @@ module MUD
          
        end   
       
+    end
+    
+    def attack_roll
+      rand(10) + @inv.length + @cool + @dex
+    end
+    
+    def defense_roll
+      rand(10) + @wear.length + @dex
     end
 
     

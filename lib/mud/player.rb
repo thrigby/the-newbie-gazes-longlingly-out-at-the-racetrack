@@ -1,7 +1,7 @@
 module MUD
   class Player
     include Commands
-    attr_accessor :name, :hp, :vit, :con, :dirty, :bounce, :wear, :inv, :gender, :str, :dex, :cool, :luck, :wis, :embed
+    attr_accessor :name, :hp, :vit, :con, :dirty, :bounce, :wear, :inv, :gender, :blubber, :bead, :pluck, :cute, :whisker, :embed, :wield
 
     def initialize(name, con)
       @name = name
@@ -13,12 +13,13 @@ module MUD
       @inv = []
       @wear = []
       @embed = []
+      @wield = []
       @gender = :male
-      @str = rand(10) + 1
-      @dex = rand(10) + 1
-      @cool = rand(10) + 1
-      @luck = rand(10) + 1
-      @wis = rand(10) + 1
+      @blubber = rand(10) + 1
+      @bead = rand(10) + 1
+      @pluck = rand(10) + 1
+      @cute = rand(10) + 1
+      @whisker = rand(10) + 1
       @exp = 0
       @position = :flop
       @readytoblow = false
@@ -58,11 +59,21 @@ module MUD
       b = a.reject { |t| t == target }
     end
     
+    def aliases
+      {
+        "l" => "look",
+        "sc" => "score",
+        "w" => "wear"     
+      }
+    end
+    
     def command(cmd, arg)
+      cmd = aliases[cmd] if aliases[cmd]
       begin
         @dirty = true
         case cmd
           when "kill"; do_kill(arg)
+          when "wield"; do_wield
           when "flex"; do_flex(arg)
           when "sexchange"; do_sexchange
           when "digwest"; do_dig_west
@@ -74,14 +85,14 @@ module MUD
           when "score"; do_score
           when "exa"; do_exa(arg)
           when "say"; do_say(arg)
-          when "look"; do_look
-          when "l"; do_look
+          when "look"; do_look(arg)
+  #        when "l"; do_look
           when "exit"; do_exit
           when "help"; do_help         #basic
           when "drop"; do_drop
           when "d"; do_drop
           when "wear"; do_wear         #basic
-          when "w"; do_wear
+  #        when "w"; do_wear
           when "remove"; do_remove     #basic
           when "r"; do_remove
           when "take"; do_take
@@ -134,9 +145,9 @@ module MUD
       # also - target.name is a pain to type ... if you have Player#to_s return @name we could just say 'target' here...
       if name
         target = find_player_by_name!(name)
-        act(:spit, target) { |c| "#{c.subject} #{c.verb} on #{c.target}." }
+        act(:spit, target) { |c| "#{c} #{c.spit!} on #{c.target}." }
       else
-        act(:spit) { |c| "#{c.subject} #{c.verb}." }
+        act { |c| "#{c} #{c.spit!}." }
       end
     end
 
@@ -164,19 +175,46 @@ module MUD
       other_players.each { |p| p.send "#{name} says '#{message}'" }
     end
 
-    def do_look
-      send "#{@room.title}"
-      send "#{@room.desc}"
-      send "#{@room.bubblegum} pieces of bubblegum sit here."
-      send " [------]"
-      other_players.each { |p| send "#{p.name} is here." }
-      if @room.item.empty?
-        send "no items"
+    def do_look(name)
+      if name
+        target = find_player_by_name(name)
+          if target
+            target = find_player_by_name!(name)
+            act(:sniff, target) { |c| "#{c} #{c.sniff!} #{c.target}." }
+            send "#{target.subpronoun} has carefully stacked and balanced #{target.wear.size} things on #{target.pospronoun} cute little noggin."
+            target.wear.each do |item|
+            send "#{item}"
+            end
+            send "\n#{target.subpronoun} carries #{target.inv.size} things on #{target.pospronoun} back."
+            target.inv.each do |item|
+            send "#{item}"            
+            end
+            if target.wield.empty?
+              send "\n#{target.subpronoun} is as defenseless and helpless as a baby seal!"
+            else
+              target.wield.each do |item|
+              send "\n#{target.subpronoun} wields #{item} in #{target.pospronoun} mouth."
+              end
+            end
+              
+          else
+          end
       else
-        @room.item.each { |m| send "#{m.item} sits here."}
+        send "#{@room.title}"
+        send "#{@room.desc}"
+        send "#{@room.bubblegum} pieces of bubblegum sit here."
+        send " [------]"
+        other_players.each { |p| send "#{p.name} is here." }
+        if @room.item.empty?
+           send "no items"
+        else
+          @room.item.each { |m| send "#{m.item} sits here."}
+        end
+        
       end
+      
     end
-
+    
     def do_exit
       send "A Polar Bear Eats You!"
       other_players.each { |p| p.send "#{name} was dragged away by a polar bear!" }
@@ -188,7 +226,7 @@ module MUD
       if @inv.empty?
         send "you're not carrying anything to drop."
       else    
-        act(:drop) { |c| "#{c.subject} #{c.verb} #{@inv.last} on the ground." }
+        act(:drop) { |c| "#{c} #{c.verb} #{@inv.last} on the ground." }
         @room.item.push(@inv.pop)
       end    
     end
@@ -198,7 +236,7 @@ module MUD
       if @room.item.empty?         
       else
         @room.item.count.times do
-        act(:pick) { |c| "#{c.subject} #{c.verb} up #{@room.item.last} and flips it on #{c.pospronoun} back." }
+        act(:pick) { |c| "#{c} #{c.verb} up #{@room.item.last} and flips it on #{c.pospronoun} back." }
         @inv << @room.item.pop
         end
       end 
@@ -208,15 +246,30 @@ module MUD
       bouncygum = rand(4) + 1   
       @room.bubblegum += bouncygum
       @position = :bounce
-      act(:bounce) { |c| "#{c.subject} #{c.verb} up and down and #{bouncygum} pieces of magic bubblegum appear!" }
+      act(:bounce) { |c| "#{c} #{c.verb} up and down and #{bouncygum} pieces of magic bubblegum appear!" }
     end
 
     def do_get
       if @room.bubblegum == 0        
       else
-        act(:pick) { |c| "#{c.subject} #{c.verb} up #{@room.bubblegum} pieces of magical bubblegum." }
+        act(:pick) { |c| "#{c} #{c.verb} up #{@room.bubblegum} pieces of magical bubblegum." }
         @inventorybg += @room.bubblegum
         @room.bubblegum = 0
+      end
+    end
+    
+    def do_wield
+      if @inv.empty?
+        "You aren't carrying anything to wield."
+      else
+        if wield.empty?
+        @wield.push(@inv.pop)
+        act(:wield) { |c| "#{c} #{c.verb} #{@wield} in #{c.pospronoun} mouth."}
+        else
+        act { |c| "#{c} #{c.drop!} #{@wield} from #{c.pospronoun} mouth and #{c.grip!} a #{@inv.last} menacingly." }
+        @room.item.push(@wield.pop)
+        @wield.push(@inv.pop)        
+        end
       end
     end
 
@@ -224,7 +277,7 @@ module MUD
       unless @readytoblow
         send "You must chew the bubblegum before you can blow a bubble!"
       else
-        act(:blow) { |c| "#{c.subject} #{c.verb} a bright red, maggic bubble until it POPS!"}
+        act(:blow) { |c| "#{c} #{c.verb} a bright red, maggic bubble until it POPS!"}
         @readytoblow = false
         color = ["red-painted", "green-painted", "blue-painted", "bloody", "rusty", "used", "rancid", "holy", "rubber", "ragged", "moldy", "tasteful", "ceremonial", "shag-carpeted", "dusty", "rotting", "solid-gold"]
         cc = color[rand(color.size)]
@@ -241,7 +294,7 @@ module MUD
         if @inv.empty?
           send "You need at least two things in your inventory to glue together."
         else
-          act(:glue) { |c| "#{c.subject} carefully #{c.verb} #{@inv[0]} to #{@inv[1]} with a gooey wad of magic bubblegum."}       
+          act(:glue) { |c| "#{c} carefully #{c.verb} #{@inv[0]} to #{@inv[1]} with a gooey wad of magic bubblegum."}       
           @inv << MagicalItem.new("glued to #{@inv.shift}","#{@inv.shift}")
         end  
       end
@@ -250,6 +303,14 @@ module MUD
     def prompt
       con.send_data "h:#{hp} v:#{vit}> "
       @dirty = false
+    end
+
+    def subpronoun
+      case @gender
+        when :male  then    "He"
+        when :female then   "She"
+        else                "It"
+      end
     end
 
     def pospronoun
@@ -271,14 +332,14 @@ module MUD
     def do_sexchange
       if gender == :male
         @gender = :female
-        act(:grow) { |c| "#{c.subject} #{c.verb} girl parts." }
+        act { |c| "#{c} #{c.grow!} girl parts." }
       else
         @gender = :male
-        act(:chop) { |c| "#{c.subject} #{c.zoom!} boy parts." }
+        act { |c| "#{c} #{c.zoom!} boy parts and #{c.smile!}." }
       end
     end        
         
-    def act(verb, target = nil, &blk)
+    def act(verb = nil, target = nil, &blk)
       @room.players.each do |observer|
         c = Context.new :subject => self, :target => target, :verb => verb.to_s, :observer => observer
                  
