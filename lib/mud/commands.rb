@@ -48,6 +48,7 @@ module MUD
       else  
         act(:balance) { |c| "#{c.subject} carefully #{c.verb} #{@inv.last} on head." }
         @wear.push(@inv.pop)
+        @defense_power = @wear.to_s.length.to_i + @blubber
       end
     end
 
@@ -58,6 +59,7 @@ module MUD
         
         act(:remove) { |c| "#{c.subject} #{c.verb} #{@wear.last} from  head."}
         @inv.push(@wear.pop)
+        @defense_power = @wear.to_s.length.to_i + @blubber
       end
     end
 
@@ -98,10 +100,10 @@ module MUD
           @wield.each { |m| send "#{m.item}"}
       end
         
-        send "You sense that your attack power is #{attack_power}"
-        send "You sense that your defense is #{defense_power}"
+        send "You sense that your attack power is #{@attack_power}"
+        send "You sense that your defense is #{@defense_power}"
     end
-    
+=begin    
     def attack_power
       @wield.to_s.length.to_i + @bead
     end
@@ -109,38 +111,42 @@ module MUD
     def defense_power
       @wear.to_s.length.to_i + @blubber
     end
-
-    def decide_hit
-      if name
-        target = find_player_by_name(name)
+=end
+    def decide_hit(target)
           if target
             target = find_player_by_name!(name)
             x = rand(10)
             y = rand(10)     
-            if (attack_power + x) < (target.defense_power + y)
+            if (@attack_power + x) < (target.defense_power + y)
               send "MISS\n"
-              send "      attack power: #{attack_power}\n"
+              send "      attack power: #{@attack_power}\n"
               send "                 x: #{x}\n"
-              send "     defense power: #{defense_power}\n"
+              send "     defense power: #{target.defense_power}\n"
               send "                 y: #{y}\n"
-              send "    attack miss by: #{(target.defense_power + y) - (attack_power + x)}"
+              send "    attack miss by: #{(target.defense_power + y) - (@attack_power + x)}"
           
             else
               send "HIT\n"          
-              send "      attack power: #{attack_power}\n"
+              send "      attack power: #{@attack_power}\n"
               send "                 x: #{x}\n"
-              send "     defense power: #{defense_power}\n"
+              send "     defense power: #{target.defense_power}\n"
               send "                 y: #{y}\n"
-              send "    attack hit by: #{-(target.defense_power + y) + (attack_power + x)}"
+              send "    attack hit by: #{-(target.defense_power + y) + (@attack_power + x)}"
+              hitnumber = -(target.defense_power + y) + (@attack_power + x)
+              knock_wear(target)
             end 
           else
           end 
-      else
-      end   
     end
     
-    def decide_damage
-      
+    def knock_wear(target)
+      case rand(10) + @attack_power
+      when 0..10; send "meh"
+      when 11..20; send "hoo-rah"
+      when 21..30; send "oink oink"
+      when 31..50; send "you rock"
+      else
+      end
     end
     
     def do_swing(name)
@@ -148,10 +154,10 @@ module MUD
         target = find_player_by_name!(name)
         if @position == :flop
         act(:swing, target) { |c| "#{c} #{c.swing!} #{@wield} at #{c.target}.\n" }        
-        decide_hit
+        decide_hit(target)
         else #bouncing attack
         act(:bounce, target) { |c| "#{c} #{c.bounce!} into the air and #{c.bat!} at #{c.target} with #{@wield}!\n"}
-        decide_hit
+        decide_hit(target)
         end
       else
       end

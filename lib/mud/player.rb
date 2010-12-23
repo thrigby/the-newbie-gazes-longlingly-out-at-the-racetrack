@@ -1,7 +1,7 @@
 module MUD
   class Player
     include Commands
-    attr_accessor :name, :hp, :vit, :con, :dirty, :bounce, :wear, :inv, :gender, :blubber, :bead, :pluck, :cute, :whisker, :embed, :wield
+    attr_accessor :name, :hp, :vit, :con, :dirty, :bounce, :wear, :inv, :gender, :blubber, :bead, :pluck, :cute, :whisker, :embed, :wield, :attack_power, :defense_power
     def initialize(name, con)
       @name = name
       @hp = 100
@@ -19,6 +19,8 @@ module MUD
       @pluck = rand(10) + 1
       @cute = rand(10) + 1
       @whisker = rand(10) + 1
+      @attack_power = @wield.to_s.length.to_i + @bead
+      @defense_power = @wear.to_s.length.to_i + @blubber
       @exp = 0
       @position = :flop
       @readytoblow = false
@@ -62,7 +64,9 @@ module MUD
       {
         "l" => "look",
         "sc" => "score",
-        "w" => "wear"     
+        "w" => "wear",
+        "ww" => "wield",
+        "un" => "unwield"    
       }
     end
     
@@ -72,6 +76,7 @@ module MUD
         @dirty = true
         case cmd
           when "swing"; do_swing(arg)
+          when "unwield"; do_unwield
           when "kill"; do_kill(arg)
           when "wield"; do_wield
           when "flex"; do_flex(arg)
@@ -157,19 +162,7 @@ module MUD
       send "You have created a new room!"
       other_players.each { |p| p.send "#{name} digs a new room to the west."}
     end
-=begin
-    def do_exa(name)
-      target = find_player_by_name(name)
-      if target
-        send "You examine #{target.name}."
-        send "They have #{target.wear.size} things."
-        target.wear.each do |item| 
-        send "#{item}"        
-      else
-        send "NOBODY HOME"
-      end  
-    end
-=end
+
     def do_say(message)
       send "You say '#{message}'"
       other_players.each { |p| p.send "#{name} says '#{message}'" }
@@ -236,7 +229,7 @@ module MUD
       if @room.item.empty?         
       else
         @room.item.count.times do
-        act(:pick) { |c| "#{c} #{c.verb} up #{@room.item.last} and flips it on #{c.pospronoun} back." }
+        act(:pick) { |c| "#{c} #{c.verb} up #{@room.item.last} and #{c.flip!} it on #{c.pospronoun} back." }
         @inv << @room.item.pop
         end
       end 
@@ -265,11 +258,23 @@ module MUD
         if wield.empty?
         @wield.push(@inv.pop)
         act(:wield) { |c| "#{c} #{c.verb} #{@wield} in #{c.pospronoun} mouth."}
+        @attack_power = @wield.to_s.length.to_i + @bead  
         else
         act { |c| "#{c} #{c.drop!} #{@wield} from #{c.pospronoun} mouth and #{c.grip!} #{@inv.last} menacingly." }
         @room.item.push(@wield.pop)
-        @wield.push(@inv.pop)  
+        @wield.push(@inv.pop)
+        @attack_power = @wield.to_s.length.to_i + @bead  
         end
+      end
+    end
+    
+    def do_unwield
+      if @wield.empty?
+        "You aren't wielding anything."
+      else
+        act(:flip) { |c| "#{c} #{c.verb} #{@wield} from #{c.pospronoun} mouth onto #{c.pospronoun} back."}
+        @inv.push(@wield.pop)
+        @attack_power = @wield.to_s.length.to_i + @bead        
       end
     end
 
