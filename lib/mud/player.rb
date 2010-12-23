@@ -2,7 +2,6 @@ module MUD
   class Player
     include Commands
     attr_accessor :name, :hp, :vit, :con, :dirty, :bounce, :wear, :inv, :gender, :blubber, :bead, :pluck, :cute, :whisker, :embed, :wield
-
     def initialize(name, con)
       @name = name
       @hp = 100
@@ -72,6 +71,7 @@ module MUD
       begin
         @dirty = true
         case cmd
+          when "swing"; do_swing(arg)
           when "kill"; do_kill(arg)
           when "wield"; do_wield
           when "flex"; do_flex(arg)
@@ -266,9 +266,9 @@ module MUD
         @wield.push(@inv.pop)
         act(:wield) { |c| "#{c} #{c.verb} #{@wield} in #{c.pospronoun} mouth."}
         else
-        act { |c| "#{c} #{c.drop!} #{@wield} from #{c.pospronoun} mouth and #{c.grip!} a #{@inv.last} menacingly." }
+        act { |c| "#{c} #{c.drop!} #{@wield} from #{c.pospronoun} mouth and #{c.grip!} #{@inv.last} menacingly." }
         @room.item.push(@wield.pop)
-        @wield.push(@inv.pop)        
+        @wield.push(@inv.pop)  
         end
       end
     end

@@ -90,8 +90,71 @@ module MUD
         send "\n You are balancing the following on your head:"
         @wear.each { |m| send "#{m.item}"}
       end
-        send "You sense that your attack power is #{@inv.length}"
-        send "You sense that your defense is #{@wear.length}"
+        
+      if @wield.empty?
+          send "You aren't wielding anything."
+      else
+          send "\n You are wielding:"
+          @wield.each { |m| send "#{m.item}"}
+      end
+        
+        send "You sense that your attack power is #{attack_power}"
+        send "You sense that your defense is #{defense_power}"
+    end
+    
+    def attack_power
+      @wield.to_s.length.to_i + @bead
+    end
+    
+    def defense_power
+      @wear.to_s.length.to_i + @blubber
+    end
+
+    def decide_hit
+      if name
+        target = find_player_by_name(name)
+          if target
+            target = find_player_by_name!(name)
+            x = rand(10)
+            y = rand(10)     
+            if (attack_power + x) < (target.defense_power + y)
+              send "MISS\n"
+              send "      attack power: #{attack_power}\n"
+              send "                 x: #{x}\n"
+              send "     defense power: #{defense_power}\n"
+              send "                 y: #{y}\n"
+              send "    attack miss by: #{(target.defense_power + y) - (attack_power + x)}"
+          
+            else
+              send "HIT\n"          
+              send "      attack power: #{attack_power}\n"
+              send "                 x: #{x}\n"
+              send "     defense power: #{defense_power}\n"
+              send "                 y: #{y}\n"
+              send "    attack hit by: #{-(target.defense_power + y) + (attack_power + x)}"
+            end 
+          else
+          end 
+      else
+      end   
+    end
+    
+    def decide_damage
+      
+    end
+    
+    def do_swing(name)
+      if name
+        target = find_player_by_name!(name)
+        if @position == :flop
+        act(:swing, target) { |c| "#{c} #{c.swing!} #{@wield} at #{c.target}.\n" }        
+        decide_hit
+        else #bouncing attack
+        act(:bounce, target) { |c| "#{c} #{c.bounce!} into the air and #{c.bat!} at #{c.target} with #{@wield}!\n"}
+        decide_hit
+        end
+      else
+      end
     end
 
     # orion: this code has 3 states
@@ -170,6 +233,9 @@ module MUD
 
     def do_kill(target)
       target = find_player_by_name(target)
+    end
+=begin      
+      
       send "With a squeezetoy squeek of rage you flop adorably towards #{target.name} with bestial fury!\n"
       target.send "With a squeezetoy squeek, #{name} flops towards you adorably with intent to KILL!.\n"
       observers(target).each { |p| p.send "#{name} makes a tiny squeezetoy squeek and flops towards #{target.name}!"}
