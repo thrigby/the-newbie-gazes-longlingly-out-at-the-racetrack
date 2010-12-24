@@ -122,7 +122,7 @@ module MUD
           act(:flop, target) { |c| "With a squeezetoy squeek of rage #{c} #{c.verb} towards #{c.target} with intent to KILL!"}
           timer = EventMachine::PeriodicTimer.new(5) do
           do_swing(target)
-          timer.cancel if (n+=1) > 5
+          timer.cancel if (n+=1) > 100
           end
         else
         end
@@ -133,43 +133,119 @@ module MUD
     def do_swing(target)
       @fighting = target
       if @position == :flop
-        act(:swing, target) { |c| "#{c} #{c.swing!} #{@wield} at #{c.target}.\n" }        
-        decide_hit(target)
+        if @wield.empty?
+          act(:nuzzle, target) { |c| "#{c} #{c.verb} #{c.target} aggressively."}        
+        else
+          decide_hit(target)
+        end
+        if target.wield.empty?
+          defensive_nuzzle(target)              
+        else
+          decide_hit(target)
+        end  
       else #bouncing attack
-        act(:bounce, target) { |c| "#{c} #{c.bounce!} into the air and #{c.bat!} at #{c.target} with #{@wield}!\n"}
-        decide_hit(name)
+        if @wield.empty?
+          act(:nuzzle, target) { |c| "#{c} #{c.verb} #{c.target} aggressively."}        
+        else
+          act(:bounce, target) { |c| "#{c} #{c.bounce!} into the air and #{c.bat!} at #{c.target} with #{@wield}!\n"}
+          @position = :flop
+          decide_hit(target)
+        end
       end
+    end
+
+    def defensive_nuzzle(target)
+      nuzzlenumber = rand(6)
+      case nuzzlenumber
+        when 0; act(:nuzzle, target) { |c| "#{c.target} #{c.tarverb} #{c} defensively." }
+        when 1; act(:whine, target) { |c| "#{c.target} #{c.tarverb} and makes cute little motorboat sounds with #{target.pospronoun} mouth." }
+        when 2; act(:squeek, target) { |c| "#{c.target} #{c.tarverb} in protest and curls up into a little ball." } 
+        when 3; act(:fart, target) { |c| "#{c.target} #{c.tarverb} after #{c} poke at #{target.pospronoun} blubber." }
+        when 4; act(:make, target) { |c| "#{c.target} #{c.tarverb} a little crying sound towards the cold, indifferent sky." }
+        when 5; send "You try to babyflipperflop away in the snow."
+                other_players.each { |p| p.send "#{target.name} tries to babyflipperflop away in the snow." }
+        else
+        end      
     end
 
     def decide_hit(target)      
       x = rand(10)
-      y = rand(10)     
+      y = rand(10)
+      dumb_luck = rand(100)
+      coin_of_fate = rand(10)
+      case coin_of_fate
+      when 0; x = x + dumb_luck
+      when 1; y = y + dumb_luck  
+      else
+      end              
         if (@attack_power + x) < (target.defense_power + y)
           send "MISS  attack power: #{@attack_power} x: #{x} defense power: #{target.defense_power} y: #{y}  attack miss by: #{(target.defense_power + y) - (@attack_power + x)}"
-          hitnumber = -((target.defense_power + y) - (@attack_power + x))
-          knock_wear(hitnumber, target)
+          hitnumber = -((target.defense_power + y) - (@attack_power + x))         
+          outcome(hitnumber, target)        
         else
           send "HIT  attack power: #{@attack_power} x: #{x} defense power: #{target.defense_power} y: #{y} attack hit by: #{-(target.defense_power + y) + (@attack_power + x)}"
           hitnumber = (@attack_power + x) - (target.defense_power + y) 
-          knock_wear(hitnumber, target)
-        end      
+          outcome(hitnumber, target)
+        end          
     end
     
-    def knock_wear(hitnumber, target)
-   
+    def outcome(hitnumber, target)
+
         case hitnumber
-          when -50..-31; act(target) { |c| "#{c.subject} #{c.giggle!} and bats." }
+          when -1000..-51; impale(target, hitnumber)            
+          when -50..-31; act(:giggle, target) { |c| "#{c.target} #{c.tarverb} and bats #{target.pospronoun} eyes at #{c}." }
           when -30..-21; act(:block, target) { |c| "#{c.target} #{c.verb} #{c.pospronoun} swing with cuteness.\n" }
           when -20..-11; act(:curl, target) { |c| "#{c.target} #{c.curl!} up into a cute, defensive ball.\n" }
-          when -10..-1; act(:wack, target) { |c| "#{c.target} #{c.wack!} #{c} with a fish. #{c} looks SAD.\n" }  
-          when 0..10; act(:puke, target) { |c| "#{c} #{c.verb} on #{c.pospronoun} and bursts into tears." }
-          when 11..20; act(:roar, target) { |c| "#{c} #{c.roar!} and #{c.impale!} #{c.target} with #{@wield}" }
-          when 21..30; send "oink oink"
-          when 31..50; send "you rock" 
+          when -10..-1; act(:wack, target) { |c| "#{c.target} #{c.tarverb} #{c} with a fish. #{c}  SAD.\n" }  
+          when 0..10; act(:puke, target) { |c| "#{c} #{c.verb} on #{c.pospronoun} bib and #{c.burst!} into tears." }
+          when 11..20; act(:roar, target) { |c| "#{c} #{c.verb} and #{c.bat!} at #{c.target} with #{@wield}" }
+          when 21..30; act(:oink, target) { |c| "#{c} #{c.verb} like a pig and #{c.nuzzle!} #{c.target} with #{@wield}" }
+          when 31..50; act(:crash, target) { |c| "#{c} #{c.bounce!} into the air and #{c.verbes} into #{c.target} with #{@wield}" }
+          when 51..1000; impale(target, hitnumber)
         else
         end
-      
+           
     end
+    
+    def impale(target, hitnumber)
+      if hitnumber < 0
+        loc = rand(5)
+        case loc
+          when 0; loc = @cranium
+                  loc_str = "cranium"
+          when 1; loc = @ribcage 
+                  loc_str = "ribcage"
+          when 2; loc = @eye 
+                  loc_str = "eye"
+          when 3; loc = @flipper 
+                  loc_str = "flipper"
+          when 4; loc = @tail 
+                  loc_str = "tail"
+          act(:impale, target) { |c| "#{c.target} #{c.tarverb} #{c} in the #{loc_str} with #{target.wield}." }
+          loc.push(target.wield.pop)
+        else
+        end
+      else
+        loc = rand(5)
+        case loc
+          when 0; loc = target.cranium 
+                  loc_str = "cranium"
+          when 1; loc = target.ribcage 
+                  loc_str = "ribcage"
+          when 2; loc = target.eye 
+                  loc_str = "eye"
+          when 3; loc = target.flipper 
+                  loc_str = "flipper"
+          when 4; loc = target.tail 
+                  loc_str = "tail"
+          act(:impale, target) { |c| "#{c} #{c.verb} #{c.target} in the #{loc_str} with #{@wield}." }
+          loc.push(@wield.pop)
+        else
+        end
+      end            
+    end
+    
+    
     # orion: this code has 3 states
     # 1) no target specified
     # 2) target specified but no one there

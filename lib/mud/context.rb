@@ -35,6 +35,30 @@ module MUD
          "your"
        end
      end
+     
+    def tarverb
+      if @observer == @subject
+      "#{@verb}s"
+      else
+      @verb
+      end
+    end
+    
+    def verbes
+      if @observer == @subject
+      @verb
+      else
+      "#{@verb}es"
+      end
+    end
+    
+    def tarverbes
+      if @observer == @subject
+      "#{@verb}es"
+      else
+      @verb
+      end
+    end
 
     def verb
       if @observer == @subject
