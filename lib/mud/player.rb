@@ -1,7 +1,7 @@
 module MUD
   class Player
     include Commands
-    attr_accessor :name, :hp, :vit, :con, :dirty, :bounce, :wear, :inv, :gender, :blubber, :bead, :pluck, :cute, :whisker, :embed, :wield, :attack_power, :defense_power
+    attr_accessor :name, :hp, :vit, :con, :dirty, :bounce, :wear, :inv, :gender, :blubber, :bead, :pluck, :cute, :whisker, :embed, :wield, :attack_power, :defense_power, :fighting
     def initialize(name, con)
       @name = name
       @hp = 100
@@ -21,6 +21,7 @@ module MUD
       @whisker = rand(10) + 1
       @attack_power = @wield.to_s.length.to_i + @bead
       @defense_power = @wear.to_s.length.to_i + @blubber
+      @fighting = nil
       @exp = 0
       @position = :flop
       @readytoblow = false

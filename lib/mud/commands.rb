@@ -46,7 +46,7 @@ module MUD
       if @inv.empty?
         send "Your inventory is empty."
       else  
-        act(:balance) { |c| "#{c.subject} carefully #{c.verb} #{@inv.last} on head." }
+        act(:balance) { |c| "#{c.subject} carefully #{c.verb} #{@inv.last} on #{c.pospronoun} head." }
         @wear.push(@inv.pop)
         @defense_power = @wear.to_s.length.to_i + @blubber
       end
@@ -112,57 +112,64 @@ module MUD
       @wear.to_s.length.to_i + @blubber
     end
 =end
-    def decide_hit(target)
-          if target
-            target = find_player_by_name!(name)
-            x = rand(10)
-            y = rand(10)     
-            if (@attack_power + x) < (target.defense_power + y)
-              send "MISS\n"
-              send "      attack power: #{@attack_power}\n"
-              send "                 x: #{x}\n"
-              send "     defense power: #{target.defense_power}\n"
-              send "                 y: #{y}\n"
-              send "    attack miss by: #{(target.defense_power + y) - (@attack_power + x)}"
-          
-            else
-              send "HIT\n"          
-              send "      attack power: #{@attack_power}\n"
-              send "                 x: #{x}\n"
-              send "     defense power: #{target.defense_power}\n"
-              send "                 y: #{y}\n"
-              send "    attack hit by: #{-(target.defense_power + y) + (@attack_power + x)}"
-              hitnumber = -(target.defense_power + y) + (@attack_power + x)
-              knock_wear(target)
-            end 
-          else
-          end 
-    end
-    
-    def knock_wear(target)
-      case rand(10) + @attack_power
-      when 0..10; send "meh"
-      when 11..20; send "hoo-rah"
-      when 21..30; send "oink oink"
-      when 31..50; send "you rock"
-      else
-      end
-    end
-    
-    def do_swing(name)
+
+    def do_kill(name)
+      n = 0
       if name
-        target = find_player_by_name!(name)
-        if @position == :flop
-        act(:swing, target) { |c| "#{c} #{c.swing!} #{@wield} at #{c.target}.\n" }        
-        decide_hit(target)
-        else #bouncing attack
-        act(:bounce, target) { |c| "#{c} #{c.bounce!} into the air and #{c.bat!} at #{c.target} with #{@wield}!\n"}
-        decide_hit(target)
+        target = find_player_by_name(name)
+        if target
+          target = find_player_by_name!(name)
+          act(:flop, target) { |c| "With a squeezetoy squeek of rage #{c} #{c.verb} towards #{c.target} with intent to KILL!"}
+          timer = EventMachine::PeriodicTimer.new(5) do
+          do_swing(target)
+          timer.cancel if (n+=1) > 5
+          end
+        else
         end
       else
+      end      
+    end
+    
+    def do_swing(target)
+      @fighting = target
+      if @position == :flop
+        act(:swing, target) { |c| "#{c} #{c.swing!} #{@wield} at #{c.target}.\n" }        
+        decide_hit(target)
+      else #bouncing attack
+        act(:bounce, target) { |c| "#{c} #{c.bounce!} into the air and #{c.bat!} at #{c.target} with #{@wield}!\n"}
+        decide_hit(name)
       end
     end
 
+    def decide_hit(target)      
+      x = rand(10)
+      y = rand(10)     
+        if (@attack_power + x) < (target.defense_power + y)
+          send "MISS  attack power: #{@attack_power} x: #{x} defense power: #{target.defense_power} y: #{y}  attack miss by: #{(target.defense_power + y) - (@attack_power + x)}"
+          hitnumber = -((target.defense_power + y) - (@attack_power + x))
+          knock_wear(hitnumber, target)
+        else
+          send "HIT  attack power: #{@attack_power} x: #{x} defense power: #{target.defense_power} y: #{y} attack hit by: #{-(target.defense_power + y) + (@attack_power + x)}"
+          hitnumber = (@attack_power + x) - (target.defense_power + y) 
+          knock_wear(hitnumber, target)
+        end      
+    end
+    
+    def knock_wear(hitnumber, target)
+   
+        case hitnumber
+          when -50..-31; act(target) { |c| "#{c.subject} #{c.giggle!} and bats." }
+          when -30..-21; act(:block, target) { |c| "#{c.target} #{c.verb} #{c.pospronoun} swing with cuteness.\n" }
+          when -20..-11; act(:curl, target) { |c| "#{c.target} #{c.curl!} up into a cute, defensive ball.\n" }
+          when -10..-1; act(:wack, target) { |c| "#{c.target} #{c.wack!} #{c} with a fish. #{c} looks SAD.\n" }  
+          when 0..10; act(:puke, target) { |c| "#{c} #{c.verb} on #{c.pospronoun} and bursts into tears." }
+          when 11..20; act(:roar, target) { |c| "#{c} #{c.roar!} and #{c.impale!} #{c.target} with #{@wield}" }
+          when 21..30; send "oink oink"
+          when 31..50; send "you rock" 
+        else
+        end
+      
+    end
     # orion: this code has 3 states
     # 1) no target specified
     # 2) target specified but no one there
@@ -237,9 +244,7 @@ module MUD
       end
     end    
 
-    def do_kill(target)
-      target = find_player_by_name(target)
-    end
+
 =begin      
       
       send "With a squeezetoy squeek of rage you flop adorably towards #{target.name} with bestial fury!\n"
