@@ -192,10 +192,31 @@ module MUD
               send "\n#{target.subpronoun} is as defenseless and helpless as a baby seal!"
             else
               target.wield.each do |item|
-              send "\n#{target.subpronoun} wields #{item} in #{target.pospronoun} mouth."
+              send "\n#{target.subpronoun} wields #{item} in #{target.pospronoun} mouth.\n"
               end
             end
-              
+               
+            if target.cranium.empty?     
+            else
+            target.cranium.each { |m| send "#{m.item} has been embedded in #{target.pospronoun} cranium."}
+            end
+            if target.ribcage.empty?     
+            else
+            target.ribcage.each { |m| send "#{m.item} has been embedded in #{target.pospronoun} ribcage."}
+            end
+            if target.eye.empty?     
+            else
+            target.eye.each { |m| send "#{m.item} has been embedded in #{target.pospronoun} eye."}
+            end
+            if target.flipper.empty?     
+            else
+            target.flipper.each { |m| send "#{m.item} has been embedded in #{target.pospronoun} flipper."}
+            end
+            if target.tail.empty?     
+            else
+            target.tail.each { |m| send "#{m.item} has been embedded in #{target.pospronoun} tail."}
+            end  
+  
           else
           end
       else

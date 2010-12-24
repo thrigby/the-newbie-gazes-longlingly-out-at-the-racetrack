@@ -99,6 +99,31 @@ module MUD
           send "\n You are wielding:"
           @wield.each { |m| send "#{m.item}"}
       end
+#:cranium, :ribcage, :eye, :flipper, :tail      
+      if @cranium.empty?     
+      else
+          @cranium.each { |m| send "#{m.item} has been embedded in your cranium."}
+      end
+      
+      if @ribcage.empty?     
+      else
+          @ribcage.each { |m| send "#{m.item} has been embedded in your ribcage."}
+      end
+      
+      if @eye.empty?     
+      else
+          @eye.each { |m| send "#{m.item} has been embedded in your eye."}
+      end
+      
+      if @flipper.empty?     
+      else
+           @flipper.each { |m| send "#{m.item} has been embedded in your flipper."}
+      end
+      
+      if @tail.empty?     
+       else
+           @tail.each { |m| send "#{m.item} has been embedded in your tail."}
+       end
         
         send "You sense that your attack power is #{@attack_power}"
         send "You sense that your defense is #{@defense_power}"
@@ -220,11 +245,11 @@ module MUD
           when 3; loc = @flipper 
                   loc_str = "flipper"
           when 4; loc = @tail 
-                  loc_str = "tail"
-          act(:impale, target) { |c| "#{c.target} #{c.tarverb} #{c} in the #{loc_str} with #{target.wield}." }
-          loc.push(target.wield.pop)
+                  loc_str = "tail"        
         else
         end
+        act(:impale, target) { |c| "#{c.target} #{c.tarverb} #{c} in the #{loc_str} with #{target.wield}." }
+        loc.push(target.wield.pop)
       else
         loc = rand(5)
         case loc
@@ -238,10 +263,10 @@ module MUD
                   loc_str = "flipper"
           when 4; loc = target.tail 
                   loc_str = "tail"
-          act(:impale, target) { |c| "#{c} #{c.verb} #{c.target} in the #{loc_str} with #{@wield}." }
-          loc.push(@wield.pop)
         else
         end
+        act(:impale, target) { |c| "#{c} #{c.verb} #{c.target} in the #{loc_str} with #{@wield}." }
+        loc.push(@wield.pop)
       end            
     end
     
