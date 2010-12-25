@@ -21,6 +21,7 @@ module MUD
       send "      socials: flex, spit, smile"
       send "    sexchange: change those personal pronouns"
       send "         kill: kill target."
+      send "          rip: rip eye, rip tail, etc... if you get impaled, remember. they just gave you a weapon."
       send "         Drop: you drop a magic item on the ground."
       send "         glue: glue two objects together. note- if you have three or more objects in your inventory, you'll lose them."
       send " Capitalized commands have shortcuts, the first letter of the command. l for look, w for wear, and so on. note: b = bounce, bb = blow bubble"
@@ -83,60 +84,51 @@ module MUD
         send "You aren't carrying anything."
       else
          send "You are carrying:"
-         @inv.each { |m| send "#{m.item}"}
+         @inv.each { |m| send "#{m}"}
       end
 
       if @wear.empty?
         send "You aren't wearing anything."
       else
         send "\n You are balancing the following on your head:"
-        @wear.each { |m| send "#{m.item}"}
+        @wear.each { |m| send "#{m}"}
       end
         
       if @wield.empty?
           send "You aren't wielding anything."
       else
           send "\n You are wielding:"
-          @wield.each { |m| send "#{m.item}"}
+          @wield.each { |m| send "#{m}"}
       end
 #:cranium, :ribcage, :eye, :flipper, :tail      
       if @cranium.empty?     
       else
-          @cranium.each { |m| send "#{m.item} has been embedded in your cranium."}
+       @cranium.each { |m| send "#{m} has been embedded in your cranium."}
       end
       
       if @ribcage.empty?     
       else
-          @ribcage.each { |m| send "#{m.item} has been embedded in your ribcage."}
+        @ribcage.each { |m| send "#{m} has been embedded in your ribcage."}
       end
       
       if @eye.empty?     
       else
-          @eye.each { |m| send "#{m.item} has been embedded in your eye."}
+        @eye.each { |m| send "#{m} has been embedded in your eye."}
       end
       
       if @flipper.empty?     
       else
-           @flipper.each { |m| send "#{m.item} has been embedded in your flipper."}
+        @flipper.each { |m| send "#{m} has been embedded in your flipper."}
       end
       
       if @tail.empty?     
-       else
-           @tail.each { |m| send "#{m.item} has been embedded in your tail."}
+      else
+        @tail.each { |m| send "#{m} has been embedded in your tail."}
        end
         
         send "You sense that your attack power is #{@attack_power}"
         send "You sense that your defense is #{@defense_power}"
     end
-=begin    
-    def attack_power
-      @wield.to_s.length.to_i + @bead
-    end
-    
-    def defense_power
-      @wear.to_s.length.to_i + @blubber
-    end
-=end
 
     def do_kill(name)
       n = 0
@@ -147,6 +139,8 @@ module MUD
           act(:flop, target) { |c| "With a squeezetoy squeek of rage #{c} #{c.verb} towards #{c.target} with intent to KILL!"}
           timer = EventMachine::PeriodicTimer.new(5) do
           do_swing(target)
+          prompt
+          target.prompt
           timer.cancel if (n+=1) > 100
           end
         else
@@ -159,7 +153,7 @@ module MUD
       @fighting = target
       if @position == :flop
         if @wield.empty?
-          act(:nuzzle, target) { |c| "#{c} #{c.verb} #{c.target} aggressively."}        
+          aggressive_nuzzle(target)  
         else
           decide_hit(target)
         end
@@ -170,7 +164,7 @@ module MUD
         end  
       else #bouncing attack
         if @wield.empty?
-          act(:nuzzle, target) { |c| "#{c} #{c.verb} #{c.target} aggressively."}        
+          aggressive_nuzzle(target)       
         else
           act(:bounce, target) { |c| "#{c} #{c.bounce!} into the air and #{c.bat!} at #{c.target} with #{@wield}!\n"}
           @position = :flop
@@ -178,7 +172,20 @@ module MUD
         end
       end
     end
-
+    
+    def aggressive_nuzzle(target)
+      nuzzlenumber = rand(6)
+      case nuzzlenumber
+        when 0; act(:nuzzle, target) { |c| "#{c} #{c.verb} #{c.target} aggressively."}
+        when 1; act(:nuzzle, target) { |c| "#{c} #{c.verb} #{c.target} with murderous intent."}
+        when 2; act(:pin, target) { |c| "#{c} #{c.verb} #{c.target} to the ground and #{c.tickle!} #{c.target} with #{c.pospronoun} nose."}   
+        when 3; act(:bark, target) { |c| "#{c} #{c.verb} at #{c.target}!"}
+        when 4; act(:charge, target) { |c| "#{c} babyflipperflop-#{c.verb} and #{c.bump!} #{c.target} with #{c.pospronoun} chest."}
+        when 5; act(:poop, target) { |c| "#{c} #{c.verb} #{c.pospronoun} diaper."}
+        else
+      end
+    end    
+        
     def defensive_nuzzle(target)
       nuzzlenumber = rand(6)
       case nuzzlenumber
@@ -190,7 +197,7 @@ module MUD
         when 5; send "You try to babyflipperflop away in the snow."
                 other_players.each { |p| p.send "#{target.name} tries to babyflipperflop away in the snow." }
         else
-        end      
+      end      
     end
 
     def decide_hit(target)      
@@ -217,19 +224,39 @@ module MUD
     def outcome(hitnumber, target)
 
         case hitnumber
-          when -1000..-51; impale(target, hitnumber)            
-          when -50..-31; act(:giggle, target) { |c| "#{c.target} #{c.tarverb} and bats #{target.pospronoun} eyes at #{c}." }
-          when -30..-21; act(:block, target) { |c| "#{c.target} #{c.verb} #{c.pospronoun} swing with cuteness.\n" }
-          when -20..-11; act(:curl, target) { |c| "#{c.target} #{c.curl!} up into a cute, defensive ball.\n" }
-          when -10..-1; act(:wack, target) { |c| "#{c.target} #{c.tarverb} #{c} with a fish. #{c}  SAD.\n" }  
-          when 0..10; act(:puke, target) { |c| "#{c} #{c.verb} on #{c.pospronoun} bib and #{c.burst!} into tears." }
-          when 11..20; act(:roar, target) { |c| "#{c} #{c.verb} and #{c.bat!} at #{c.target} with #{@wield}" }
-          when 21..30; act(:oink, target) { |c| "#{c} #{c.verb} like a pig and #{c.nuzzle!} #{c.target} with #{@wield}" }
-          when 31..50; act(:crash, target) { |c| "#{c} #{c.bounce!} into the air and #{c.verbes} into #{c.target} with #{@wield}" }
-          when 51..1000; impale(target, hitnumber)
-        else
-        end
-           
+          when -1000..-51
+             if target.wield.empty?
+               defensive_nuzzle(target)
+             else
+               impale(target, hitnumber)
+             end            
+          when -50..-31
+             act(:crash, target) { |c| "#{c.target} #{c.bounce!} into the air and #{c.tarverb} into #{c} with #{target.wield}." }
+             knock(target, hitnumber)
+          when -30..-21
+             act(:block, target) { |c| "#{c.target} #{c.verb} #{c.pospronoun} swing with cuteness.\n" }
+          when -20..-11
+             act(:curl, target) { |c| "#{c.target} #{c.curl!} up into a cute, defensive ball.\n" }
+          when -10..-1
+             act(:wack, target) { |c| "#{c.target} #{c.tarverb} #{c} with a fish. #{c}  SAD.\n" }
+               
+          when 0..10
+             act(:puke, target) { |c| "#{c} #{c.verb} on #{c.pospronoun} bib and #{c.burst!} into tears." }
+          when 11..20
+             act(:roar, target) { |c| "#{c} #{c.verb} and #{c.bat!} at #{c.target} with #{@wield}" }
+          when 21..30
+             act(:oink, target) { |c| "#{c} #{c.verb} like a pig and #{c.nuzzle!} #{c.target} with #{@wield}" }
+          when 31..50
+             act(:crash, target) { |c| "#{c} #{c.bounce!} into the air and #{c.verbes} into #{c.target} with #{@wield}" }
+             knock(target, hitnumber)
+          when 51..1000
+             if @wield.empty?
+               aggressive_nuzzle(target)
+             else
+               impale(target, hitnumber)
+             end
+          else
+          end           
     end
     
     def impale(target, hitnumber)
@@ -270,6 +297,27 @@ module MUD
       end            
     end
     
+    def knock(target, hitnumber)
+      if hitnumber < 0
+        if @wear.empty?
+          act(:wack, target) { |c| "#{c.target} #{c.tarverb} #{c} hard on the nose!"}
+        else
+          arrayloc = rand(@wear.size)
+          arrayitem = @wear[arrayloc]
+          act(:wack, target) { |c| "#{c.target} #{c.tarverb} #{c} so hard that it knocks #{arrayitem} from his head!"}
+          @room.item.push(@wear.slice!(arrayloc))          
+        end           
+      else #hitnumber > 0
+        if target.wear.empty?
+          act(:wack, target) { |c| "#{c} #{c.verb} #{c.target} hard on the nose!"}
+        else
+          arrayloc = rand(target.wear.size)
+          arrayitem = target.wear[arrayloc]
+          act(:wack, target) { |c| "#{c} #{c.verb} #{c.target} so hard that it knocks #{arrayitem} from his head!"}
+          @room.item.push(target.wear.slice!(arrayloc))          
+        end               
+      end      
+    end
     
     # orion: this code has 3 states
     # 1) no target specified

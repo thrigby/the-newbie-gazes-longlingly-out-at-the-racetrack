@@ -82,6 +82,7 @@ module MUD
         @dirty = true
         case cmd
           when "swing"; do_swing(arg)
+          when "rip"; do_rip(arg)
           when "unwield"; do_unwield
           when "kill"; do_kill(arg)
           when "wield"; do_wield
@@ -215,8 +216,7 @@ module MUD
             if target.tail.empty?     
             else
             target.tail.each { |m| send "#{m.item} has been embedded in #{target.pospronoun} tail."}
-            end  
-  
+            end    
           else
           end
       else
@@ -229,9 +229,41 @@ module MUD
            send "no items"
         else
           @room.item.each { |m| send "#{m.item} sits here."}
-        end
-        
+        end      
       end
+    end
+    
+    def do_rip(loc)
+      case loc
+        when "cranium"
+          @loc = @cranium
+          locs = "cranium"
+        when "ribcage"
+          @loc = @ribcage
+          locs = "ribcage"
+        when "eye"
+          @loc = @eye
+          locs = "eye"
+        when "tail"
+          @loc = @tail
+          locs = "tail"
+        when "flipper"
+          @loc = @flipper
+          locs = "flipper"     
+      else
+        send "your call is important to us. please stay on the line."
+      end  
+        if @loc.empty?
+          send "nothing is impaling you in the #{locs}"
+        else
+          if @wield.empty?
+          else  
+          act(:drop) { |c| "#{c} #{c.verb} #{@wield} to the ground."}
+          @room.item.push(@wield.pop)
+          end        
+          act(:rip) { |c| "#{c} #{c.grit!} #{c.pospronoun} teeth and #{c.verb} #{@loc.last} from #{c.pospronoun} #{locs}. BLOOD spurts from a gaping hole in #{c.pospronoun} #{locs} and #{c} #{c.ROAR!}!" }
+          @wield.push(@loc.pop)
+        end      
       
     end
     
@@ -333,7 +365,7 @@ module MUD
     end     
         
     def prompt
-      con.send_data "h:#{hp} v:#{vit}> "
+      con.send_data "hp: #{hp} cute: #{cute}> "
       @dirty = false
     end
 
