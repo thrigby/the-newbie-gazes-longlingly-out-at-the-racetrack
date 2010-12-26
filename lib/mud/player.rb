@@ -1,7 +1,7 @@
 module MUD
   class Player
     include Commands
-    attr_accessor :name, :hp, :vit, :con, :dirty, :bounce, :wear, :inv, :gender, :blubber, :bead, :pluck, :cute, :whisker, :embed, :wield, :attack_power, :defense_power, :fighting, :cranium, :ribcage, :eye, :flipper, :tail
+    attr_accessor :name, :hp, :vit, :con, :dirty, :bounce, :wear, :inv, :gender, :blubber, :bead, :pluck, :cute, :whisker, :embed, :wield, :attack_power, :defense_power, :fighting, :cranium, :ribcage, :eye, :flipper, :tail, :exp
     def initialize(name, con)
       @name = name
       @hp = 100
@@ -263,6 +263,7 @@ module MUD
           end        
           act(:rip) { |c| "#{c} #{c.grit!} #{c.pospronoun} teeth and #{c.verb} #{@loc.last} from #{c.pospronoun} #{locs}. BLOOD spurts from a gaping hole in #{c.pospronoun} #{locs} and #{c} #{c.ROAR!}!" }
           @wield.push(@loc.pop)
+          @hp = @hp - @wield.length
         end      
       
     end

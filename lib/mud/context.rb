@@ -28,13 +28,28 @@ module MUD
     end
     
     def pospronoun
-  #   his, her, your! yes!
       if @subject != @observer
           @subject.pospronoun
        else
          "your"
        end
      end
+     
+    def isare
+      if @subject != @observer
+        "is"
+      else
+        "are"
+      end        
+    end
+    
+    def tisare
+      if @subject != @observer
+        "are"
+      else
+        "is"
+      end
+    end
      
     def tarverb
       if @observer == @subject

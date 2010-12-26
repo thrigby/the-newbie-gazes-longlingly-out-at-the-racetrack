@@ -139,8 +139,11 @@ module MUD
           act(:flop, target) { |c| "With a squeezetoy squeek of rage #{c} #{c.verb} towards #{c.target} with intent to KILL!"}
           timer = EventMachine::PeriodicTimer.new(5) do
           do_swing(target)
+          dead_check(target)
           prompt
           target.prompt
+          timer.cancel if @hp < 0
+          timer.cancel if target.hp < 0
           timer.cancel if (n+=1) > 100
           end
         else
@@ -149,6 +152,41 @@ module MUD
       end      
     end
     
+    def dead_check(target)
+      if target.hp > 0
+      else          
+          act(:float, target) { |c| "\nA magic red balloon appears to rescue #{c.target}!\n#{c.target} #{c.tarverb} into the sky on a magic red balloon!\n\nThe magic red balloon pops and #{c.target} #{c.come!} crashing down to #{target.pospronoun} death!\n#{c.target} #{c.tisare} DEAD!!!\n"}
+          act(:ascend, target) { |c| "#{c.target} #{c.tarverb} to baby seal heaven on a magic blue balloon." }   
+          @hp = @hp + target.whisker
+          @cute = @cute + target.cute 
+          @blubber = @blubber + target.blubber
+          @whisker = @whisker + target.whisker
+          @pluck = @pluck + target.pluck
+          @bead = @bead + target.bead
+          @exp = @exp + 1 + target.exp 
+          @room.players.delete target
+          @room.add_corpse MagicalItem.new "corpse of #{target.name}", "sad little"     
+          target.con.close_connection_after_writing
+          send "You feel Stronger! You feel cuter! You gain #{(1 + target.exp)} experience!"
+          
+      end
+      if @hp > 0    
+      else             
+          act(:float, target) { |c| "\nA magic red balloon appears to rescue #{c}!#{c} #{c.verb} into the sky on a magic red balloon!\n\nThe magic red balloon pops and #{c} #{c.come!} crashing down to #{c.pospronoun} death!\n#{c} #{c.isare} DEAD!!!\n#{c} #{c.ascend!} to baby seal heaven on a magic blue balloon"}
+         target.hp = target.hp + @whisker
+         target.cute = target.cute + @cute 
+         target.blubber = target.blubber + @blubber
+         target.whisker = target.whisker + @whisker
+         target.pluck = target.pluck + @pluck
+         target.bead = target.bead + @bead
+         target.exp = target.exp + 1 + @exp
+         @room.players.delete self
+         @room.add_corpse MagicalItem.new "corpse of #{name}", "sad little"
+         con.close_connection_after_writing
+         target.send "You feel Stronger! You feel cuter! You gain #{(1 + @exp)} experience!"
+      end      
+    end
+        
     def do_swing(target)
       @fighting = target
       if @position == :flop
@@ -222,13 +260,15 @@ module MUD
     end
     
     def outcome(hitnumber, target)
-
+      wound(target, hitnumber)
         case hitnumber
+          
           when -1000..-51
              if target.wield.empty?
                defensive_nuzzle(target)
              else
                impale(target, hitnumber)
+               
              end            
           when -50..-31
              act(:crash, target) { |c| "#{c.target} #{c.bounce!} into the air and #{c.tarverb} into #{c} with #{target.wield}." }
@@ -239,7 +279,6 @@ module MUD
              act(:curl, target) { |c| "#{c.target} #{c.curl!} up into a cute, defensive ball.\n" }
           when -10..-1
              act(:wack, target) { |c| "#{c.target} #{c.tarverb} #{c} with a fish. #{c}  SAD.\n" }
-               
           when 0..10
              act(:puke, target) { |c| "#{c} #{c.verb} on #{c.pospronoun} bib and #{c.burst!} into tears." }
           when 11..20
@@ -247,16 +286,25 @@ module MUD
           when 21..30
              act(:oink, target) { |c| "#{c} #{c.verb} like a pig and #{c.nuzzle!} #{c.target} with #{@wield}" }
           when 31..50
-             act(:crash, target) { |c| "#{c} #{c.bounce!} into the air and #{c.verbes} into #{c.target} with #{@wield}" }
-             knock(target, hitnumber)
+             act(:crash, target) { |c| "#{c} #{c.bounce!} into the air and #{c.verbes} into #{c.target}" }
+             knock(target, hitnumber)             
           when 51..1000
              if @wield.empty?
                aggressive_nuzzle(target)
              else
                impale(target, hitnumber)
+               
              end
           else
           end           
+    end
+    
+    def wound(target, hitnumber)
+      if hitnumber > 0
+      target.hp = target.hp - hitnumber
+      else
+      @hp = @hp + hitnumber
+      end    
     end
     
     def impale(target, hitnumber)
@@ -319,13 +367,6 @@ module MUD
       end      
     end
     
-    # orion: this code has 3 states
-    # 1) no target specified
-    # 2) target specified but no one there
-    # 3) target specified and found
-    # since find_player is always called (even if no name is passed) and returns nil if its not found
-    # you are going to do "You smile" and never NOBODY HOME
-
     def do_smile(name)
       # orion: note I can aboid the NOBDY home thing here since it will jump up to the exception handler above
       # also - target.name is a pain to type ... if you have Player#to_s return @name we could just say 'target' here...
