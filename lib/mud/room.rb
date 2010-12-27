@@ -17,7 +17,7 @@ module MUD
     end
     
     def add_corpse(item)
-      @players.each { |p| p.send "#{item} flips through the air and lands on the ground.".capitalize}  
+      @players.each { |p| p.send "The #{item} flips through the air and lands on the ground.".capitalize}  
       @item << item
     end
   end  

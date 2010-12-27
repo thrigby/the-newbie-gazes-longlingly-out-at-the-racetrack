@@ -35,6 +35,14 @@ module MUD
        end
      end
      
+    def tarpospronoun
+      if @subject != @observer
+        "your"
+      else
+        @subject.pospronoun
+      end
+    end
+     
     def isare
       if @subject != @observer
         "is"

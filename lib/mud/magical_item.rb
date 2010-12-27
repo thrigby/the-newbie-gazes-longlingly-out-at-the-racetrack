@@ -10,7 +10,7 @@ module MUD
     end
     
     def to_s
-      "a #{color} #{name}"      
+      "#{color} #{name}"      
     end
   end
 end

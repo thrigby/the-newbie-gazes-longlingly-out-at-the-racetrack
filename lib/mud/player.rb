@@ -1,7 +1,7 @@
 module MUD
   class Player
     include Commands
-    attr_accessor :name, :hp, :vit, :con, :dirty, :bounce, :wear, :inv, :gender, :blubber, :bead, :pluck, :cute, :whisker, :embed, :wield, :attack_power, :defense_power, :fighting, :cranium, :ribcage, :eye, :flipper, :tail, :exp
+    attr_accessor :name, :hp, :vit, :con, :dirty, :bounce, :wear, :inv, :gender, :blubber, :bead, :pluck, :cute, :whisker, :embed, :wield, :attack_power, :defense_power, :fighting, :cranium, :ribcage, :eye, :flipper, :tail, :exp, :type, :berserk
     def initialize(name, con)
       @name = name
       @hp = 100
@@ -26,6 +26,10 @@ module MUD
       @whisker = rand(10) + 1
       @attack_power = @wield.to_s.length.to_i + @bead
       @defense_power = @wear.to_s.length.to_i + @blubber
+      @type = :seal
+      @berserker = false
+      @berserk_counter = 0
+      @berserk = false
       @fighting = nil
       @exp = 0
       @position = :flop
@@ -81,6 +85,9 @@ module MUD
       begin
         @dirty = true
         case cmd
+          when "berserker"; do_berserker
+          when "possess"; do_possess
+          when "ascend"; do_ascend
           when "swing"; do_swing(arg)
           when "rip"; do_rip(arg)
           when "unwield"; do_unwield
@@ -150,6 +157,26 @@ module MUD
 
     def find_player_by_name!(name)
       find_player_by_name(name) || raise(MissingTarget, name)
+    end
+
+    def do_berserker
+      @berserker = true
+      act(:squint) { |c| "#{c} #{c.verb} and #{c.look!} like it's poop-time!" }
+      timer = EventMachine::PeriodicTimer.new(3) do     
+      color = ["shag-carpeted", "leopard-print-upholstered ", "massive, horned", "cute little plush"]
+      cc = color[rand(color.size)]
+      toy = ["viking helmet", "viking battle helmet", "GWAR battle helmet", "viking dragonhelm", "Viking's football helmet"]
+      tt = toy[rand(toy.size)]
+      @wear.push MagicalItem.new tt, cc
+      act { |c| "\n#{c} #{c.isare} infused with the spirit of the Vikings!\nA #{cc} #{tt} appears on #{c.pospronoun} head!\n"}      
+      color = ["shag-carpeted", "leopard-print-upholstered", "massive, horned", "cute little plush squeezy-toy"]
+      cc = color[rand(color.size)]
+      toy = ["dragon horn of Valhalla", "viking battle axe", "Epiphone Goth 1958 Explorer Electric Guitar", "Gibson Explorer covered in duck stickers", "1982 Casio ROM Keyboard MT-18"]
+      tt = toy[rand(toy.size)]      
+      act { |c| "#{c} #{c.roar!} and #{c.hold!} a #{cc} #{tt} aloft!\n"}      
+      @wield.push MagicalItem.new tt, cc
+      timer.cancel 
+      end      
     end
 
     def do_spit(name)
@@ -228,7 +255,14 @@ module MUD
         if @room.item.empty?
            send "no items"
         else
-          @room.item.each { |m| send "#{m.item} sits here."}
+          if @room.item[1] == nil
+            send "You see a #{@room.item}"
+          else
+            copyitems = @room.item.clone
+            lastitem = copyitems.pop
+            mainstring = copyitems.join(", a ")
+            send "You see a #{mainstring}, and a #{lastitem}."
+          end                   
         end      
       end
     end
