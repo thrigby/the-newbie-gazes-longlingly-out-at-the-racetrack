@@ -26,7 +26,8 @@ module MUD
       send "         glue: glue two objects together. note- if you have three or more objects in your inventory, you'll lose them."
       send " Capitalized commands have shortcuts, the first letter of the command. l for look, w for wear, and so on. note: b = bounce, bb = blow bubble"
       send "\n Score or 'sc' gives you some vague information that will probably not be all that helpful. This game is completely rigged and you really don't stand any sort of chance."
-      send "\n Death is not the end. You can possess, ascend,"
+      send "\n Death is not the end. You can possess, ascend"
+      send "Autowield will turn you into a killing machine. kind of. it can get you killed too"
     end
 
     # orion: seems like you'd want to have these be @blubber instead of @str and @beadiness instead of @dex
@@ -50,7 +51,7 @@ module MUD
       else  
         act(:balance) { |c| "#{c.subject} carefully #{c.verb} #{@inv.last} on #{c.pospronoun} head." }
         @wear.push(@inv.pop)
-        @defense_power = @wear.to_s.length.to_i + @blubber
+        update_combat_stats
       end
     end
 
@@ -61,7 +62,7 @@ module MUD
         
         act(:remove) { |c| "#{c.subject} #{c.verb} #{@wear.last} from  head."}
         @inv.push(@wear.pop)
-        @defense_power = @wear.to_s.length.to_i + @blubber
+        update_combat_stats
       end
     end
 
@@ -144,11 +145,14 @@ module MUD
             send "#{target.name} is a ghost. You can't hurt them."
           elsif target.type == :seal
             timer = EventMachine::PeriodicTimer.new(1) do
+            update_combat_stats
+            target.update_combat_stats
             dead_check(target)
             timer.cancel if @hp < 0
             timer.cancel if target.hp < 0
             if @hp > 0 && target.hp > 0
               do_swing(target)
+              
             else
             end
             prompt
@@ -162,10 +166,65 @@ module MUD
       end      
     end
     
+    def update_combat_stats
+      @defense_power = @wear.to_s.length.to_i + @blubber
+      @attack_power = @wield.to_s.length.to_i + @bead
+      run_autowield  
+      if @berserker == true
+        @berserk_counter = @berserk_counter += 1
+        special_number = rand(4)
+        if @berserk_counter == special_number
+          
+          act(:go) { |c| "#{c} #{c.froth!} and #{c.roar!} and #{c.verbes} BERSERK, rocking some wicked air guitar!"}
+        else
+        end
+      else
+      end        
+    end
+    
+    def do_autowield
+      if @autowield == false
+      send "You turn on autowield. You will now wield things as quickly and as the opportunities arise. Should you lose your weapon, as soon as the opportunity presents itself, you will take it."
+      @autowield = true
+      else
+      send "You turn off autowield."
+      end      
+    end
+    
+    def run_autowield
+      if @autowield == false
+      else
+        if @wield.empty?
+          if @inv.empty?
+            if @room.item.empty?
+              if @wear.empty?
+                act { |c| "#{c} #{c.squeek!} feeling helpless!"}
+              else
+                act { |c| "#{c} #{c.flip} a #{@wear.last} from #{c.pospronoun} head into #{c.pospronoun} mouth!"}
+                @wield.push(@wear.pop)
+              end
+            else
+              act { |c| "#{c} hastily #{c.pick!} up a #{@room.item.last} and #{c.wield!} it in #{c.pospronoun} mouth."}
+              @wield.push(@room.item.pop)  
+            end  
+          else
+            act { |c| "#{c} hastily #{c.grip!} a #{@inv.last} in #{c.pospronoun} mouth."}
+            @wield.push(@inv.pop)
+          end          
+        else
+        end        
+      end
+    end   
+    
     def dead_check(target)
       if target.hp > 0
-      else          
+      else
+        redballoon = rand(100)
+        if redballoon < 98   
           act(:float, target) { |c| "\nA magic red balloon appears to rescue #{c.target}!\n#{c.target} #{c.tarverb} into the sky on a magic red balloon!\n\nThe magic red balloon pops and #{c.target} #{c.come!} crashing down to #{target.pospronoun} death!\n#{c.target} #{c.tisare} DEAD!!!\n"}
+        else
+          act { |c| "#{c.target} #{c.tisare} DEAD!!!\n"}
+        end
           
           @hp = @hp + target.whisker
           @cute = @cute + target.cute 
@@ -188,8 +247,13 @@ module MUD
           
       end
       if @hp > 0    
-      else             
+      else   
+        redballoon = rand(100)
+        if redballoon < 90         
           act(:float, target) { |c| "\nA magic red balloon appears to rescue #{c}!#{c} #{c.verb} into the sky on a magic red balloon!\n\nThe magic red balloon pops and #{c} #{c.come!} crashing down to #{c.pospronoun} death!\n#{c} #{c.isare} DEAD!!!\n" }
+        else
+         act { |c| "#{c} #{c.isare} DEAD!!!\n"}
+        end
          target.hp = target.hp + @whisker
          target.cute = target.cute + @cute 
          target.blubber = target.blubber + @blubber
@@ -334,11 +398,11 @@ module MUD
              act(:crash, target) { |c| "#{c.target} #{c.bounce!} into the air and #{c.tarverb} into #{c} with #{target.wield}." }
                knock(target, hitnumber)
           when -30..-21
-             act(:block, target) { |c| "#{c.target} #{c.verb} #{c.pospronoun} swing with cuteness.\n" }
+             act(:throw, target) { |c| "#{c} #{c.verb} #{c.pospronoun} face on #{c.tarpospronoun} #{target.wield}." }
           when -20..-11
-             act(:curl, target) { |c| "#{c.target} #{c.curl!} up into a cute, defensive ball.\n" }
+             act(target) { |c| "#{c} #{c.flop!} and #{c.bonk!} #{c.pospronoun} head on the snow." }
           when -10..-1
-             act(:wack, target) { |c| "#{c.target} #{c.tarverb} #{c} with a fish. #{c}  SAD.\n" }
+             act(:wack, target) { |c| "#{c.target} #{c.tarverb} #{c} with a fish. #{c} #{c.look!} SAD.\n" }
           when 0..10
              act(:puke, target) { |c| "#{c} #{c.verb} on #{c.pospronoun} bib and #{c.burst!} into tears." }
           when 11..20
@@ -378,7 +442,7 @@ module MUD
                   loc_str = "tail"        
         else
         end
-        act(:impale, target) { |c| "#{c.target} #{c.tarverb} #{c} in the #{loc_str} with #{target.wield}." }
+        act(target) { |c| "#{c} #{c.trip!} and #{c.impale!} #{c.pospronoun}self on #{c.tarpospronoun} #{target.wield}." }
         loc.push(target.wield.pop)
       else
         loc = rand(5)
@@ -407,7 +471,7 @@ module MUD
         else
           arrayloc = rand(@wear.size)
           arrayitem = @wear[arrayloc]
-          act(:wack, target) { |c| "#{c.target} #{c.tarverb} #{c} so hard that it knocks #{arrayitem} from his head!"}
+          act(target) { |c| "#{c} #{c.trip!} and #{c.bang!} #{c.pospronoun} head on #{c.tarpospronoun} #{target.wield}, knocking a #{arrayitem} from #{c.pospronoun} head." }
           @room.item.push(@wear.slice!(arrayloc))          
         end           
       else #hitnumber > 0
@@ -416,7 +480,7 @@ module MUD
         else
           arrayloc = rand(target.wear.size)
           arrayitem = target.wear[arrayloc]
-          act(:wack, target) { |c| "#{c} #{c.verb} #{c.target} so hard that it knocks #{arrayitem} from his head!"}
+          act(:wack, target) { |c| "#{c} #{c.verb} #{c.target} so hard that it knocks a #{arrayitem} from his head!"}
           @room.item.push(target.wear.slice!(arrayloc))          
         end               
       end      

@@ -1,7 +1,7 @@
 module MUD
   class Player
     include Commands
-    attr_accessor :name, :hp, :vit, :con, :dirty, :bounce, :wear, :inv, :gender, :blubber, :bead, :pluck, :cute, :whisker, :embed, :wield, :attack_power, :defense_power, :fighting, :cranium, :ribcage, :eye, :flipper, :tail, :exp, :type, :berserk
+    attr_accessor :name, :hp, :vit, :con, :dirty, :bounce, :wear, :inv, :gender, :blubber, :bead, :pluck, :cute, :whisker, :embed, :wield, :attack_power, :defense_power, :fighting, :cranium, :ribcage, :eye, :flipper, :tail, :exp, :type, :berserk, :autowield
     def initialize(name, con)
       @name = name
       @hp = 100
@@ -30,6 +30,7 @@ module MUD
       @berserker = false
       @berserk_counter = 0
       @berserk = false
+      @autowield = false
       @fighting = nil
       @exp = 0
       @position = :flop
@@ -86,6 +87,7 @@ module MUD
         @dirty = true
         case cmd
           when "berserker"; do_berserker
+          when "autowield"; do_autowield
           when "possess"; do_possess
           when "ascend"; do_ascend
           when "swing"; do_swing(arg)
@@ -159,22 +161,25 @@ module MUD
       find_player_by_name(name) || raise(MissingTarget, name)
     end
 
+
+
     def do_berserker
       @berserker = true
       act(:squint) { |c| "#{c} #{c.verb} and #{c.look!} like it's poop-time!" }
       timer = EventMachine::PeriodicTimer.new(3) do     
       color = ["shag-carpeted", "leopard-print-upholstered ", "massive, horned", "cute little plush"]
       cc = color[rand(color.size)]
-      toy = ["viking helmet", "viking battle helmet", "GWAR battle helmet", "viking dragonhelm", "Viking's football helmet"]
+      toy = ["GWAR battle helmet", "viking dragonhelm", "football helmet"]
       tt = toy[rand(toy.size)]
-      @wear.push MagicalItem.new tt, cc
+      @wear.push MagicalItem.new tt, cc     
       act { |c| "\n#{c} #{c.isare} infused with the spirit of the Vikings!\nA #{cc} #{tt} appears on #{c.pospronoun} head!\n"}      
       color = ["shag-carpeted", "leopard-print-upholstered", "massive, horned", "cute little plush squeezy-toy"]
       cc = color[rand(color.size)]
-      toy = ["dragon horn of Valhalla", "viking battle axe", "Epiphone Goth 1958 Explorer Electric Guitar", "Gibson Explorer covered in duck stickers", "1982 Casio ROM Keyboard MT-18"]
+      toy = ["Epiphone Goth 1958 Explorer Electric Guitar", "Gibson Explorer covered in duck stickers", "1982 Casio ROM Keyboard MT-18"]
       tt = toy[rand(toy.size)]      
       act { |c| "#{c} #{c.roar!} and #{c.hold!} a #{cc} #{tt} aloft!\n"}      
       @wield.push MagicalItem.new tt, cc
+      update_combat_stats
       timer.cancel 
       end      
     end
@@ -298,6 +303,7 @@ module MUD
           act(:rip) { |c| "#{c} #{c.grit!} #{c.pospronoun} teeth and #{c.verb} #{@loc.last} from #{c.pospronoun} #{locs}. BLOOD spurts from a gaping hole in #{c.pospronoun} #{locs} and #{c} #{c.ROAR!}!" }
           @wield.push(@loc.pop)
           @hp = @hp - @wield.length
+          update_combat_stats
         end      
       
     end
@@ -357,7 +363,7 @@ module MUD
         act { |c| "#{c} #{c.drop!} #{@wield} from #{c.pospronoun} mouth and #{c.grip!} #{@inv.last} menacingly." }
         @room.item.push(@wield.pop)
         @wield.push(@inv.pop)
-        @attack_power = @wield.to_s.length.to_i + @bead  
+        update_combat_stats
         end
       end
     end
@@ -451,7 +457,11 @@ module MUD
     end
 
     def berserk?
-      false
+      if @berserk == false
+        false
+      else
+        true
+      end
     end
   end
 end
