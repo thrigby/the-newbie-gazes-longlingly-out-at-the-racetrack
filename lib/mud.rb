@@ -4,6 +4,7 @@ require 'mud/commands'
 require 'mud/player'
 require 'mud/magical_item'
 require 'mud/connection'
+#require 'mud/classes'
 
 
 module MUD

@@ -243,7 +243,7 @@ module MUD
             end
           @room.add_corpse MagicalItem.new "corpse of #{target.name} #{impale_string}", "sad little"     
           send "You feel Stronger! You feel cuter! You gain #{(1 + target.exp)} experience!"
-          target.name = "The ghost of #{target.name}"
+#          target.name = "The ghost of #{target.name}"
           target.type = :ghost
           
       end
@@ -270,7 +270,7 @@ module MUD
            end
          @room.add_corpse MagicalItem.new "corpse of #{name} #{impale_string}", "sad little"
          target.send "You feel Stronger! You feel cuter! You gain #{(1 + @exp)} experience!"
-         @name = "The ghost of #{@name}"
+#         @name = "The ghost of #{@name}"
          @type = :ghost
       end      
     end    

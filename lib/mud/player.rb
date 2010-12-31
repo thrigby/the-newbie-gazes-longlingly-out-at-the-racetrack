@@ -165,17 +165,6 @@ module MUD
       find_player_by_name(name) || raise(MissingTarget, name)
     end
 
-
-    def do_zombie
-      if @type = :ghost
-        @type = :zombie
-        act(:snarl) { |c| "#{c} #{c.verb} and #{c.groan!} and #{c.rise!} from the dead to hunt for BRAINS!"}
-        
-      else
-        send "You must be dead before you can become a zombie."
-      end
-    end
-
     def do_berserker
       @berserker = true
       act(:squint) { |c| "#{c} #{c.verb} and #{c.look!} like it's poop-time!" }
@@ -195,6 +184,16 @@ module MUD
       update_combat_stats
       timer.cancel 
       end      
+    end
+    
+    def do_zombie
+      if @type == :ghost
+        @hp = rand(1000)
+        @type = :zombie
+        act(:snarl) { |c| "#{c} #{c.verb} and #{c.groan!} and #{c.rise!} from the dead to hunt for BRAINS!"}
+      else
+        send "You must be dead before you can become a zombie."
+      end
     end
 
     def do_spit(name)
@@ -275,7 +274,9 @@ module MUD
         send "#{@room.desc}"
         send "#{@room.bubblegum} pieces of bubblegum sit here."
         send " [------]"
-        other_players.each { |p| send "#{p.name} is here." }
+          
+        other_players.each { |p| send "A #{p.type} named #{p.name} is here." }
+          
         if @room.item.empty?
            send "no items"
         else
