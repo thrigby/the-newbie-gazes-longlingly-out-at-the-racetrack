@@ -39,13 +39,13 @@ module MUD
       prompt
     end
 
-    def to_room(room)
+    def to_room(number)
       if @room
         other_players.each { |p| p.send "#{name} has left." }
         @room.players.delete self
       end
 
-      @room = room
+      @room = number
       @room.players.push self
       other_players.each { |p| p.send "#{name} has arrived." }
     end
@@ -86,6 +86,7 @@ module MUD
       begin
         @dirty = true
         case cmd
+          when "zombie"; do_zombie
           when "berserker"; do_berserker
           when "autowield"; do_autowield
           when "possess"; do_possess
@@ -97,7 +98,10 @@ module MUD
           when "wield"; do_wield
           when "flex"; do_flex(arg)
           when "sexchange"; do_sexchange
+            
           when "digwest"; do_dig_west
+          when "west"; do_west
+        
           when "cold"; do_cold_eye(arg)
    #       when "go"; do_go(arg) soon, precious... soon...
           when "smile"; do_smile(arg)
@@ -162,6 +166,15 @@ module MUD
     end
 
 
+    def do_zombie
+      if @type = :ghost
+        @type = :zombie
+        act(:snarl) { |c| "#{c} #{c.verb} and #{c.groan!} and #{c.rise!} from the dead to hunt for BRAINS!"}
+        
+      else
+        send "You must be dead before you can become a zombie."
+      end
+    end
 
     def do_berserker
       @berserker = true
@@ -196,12 +209,18 @@ module MUD
     end
 
     def do_dig_west
-      new_room = Room.new "Ice Tunnel", "It's cold.", 2
+      west = @room.coord_x - 1
+      new_room = Room.new "Ice Tunnel", "It's cold.", @room.number + 1, west, @room.coord_y, @room.coord_z
       send "You use your baby seal magic powers and dig westward!"
       send "You have created a new room!"
       other_players.each { |p| p.send "#{name} digs a new room to the west."}
+      
     end
-
+    
+#    def do_west
+#      to_room(1)
+#    end
+    
     def do_say(message)
       send "You say '#{message}'"
       other_players.each { |p| p.send "#{name} says '#{message}'" }

@@ -172,10 +172,11 @@ module MUD
       run_autowield  
       if @berserker == true
         @berserk_counter = @berserk_counter += 1
-        special_number = rand(4)
+        special_number = rand(3)
         if @berserk_counter == special_number
           
           act(:go) { |c| "#{c} #{c.froth!} and #{c.roar!} and #{c.verbes} BERSERK, rocking some wicked air guitar!"}
+          @attack_power = @attack_power + 50
         else
         end
       else

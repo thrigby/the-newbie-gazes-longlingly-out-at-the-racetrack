@@ -9,6 +9,9 @@ require 'mud/connection'
 module MUD
   Brand = "BABY SEAL MUD!"
   Port = 8888
-  StartRoom = Room.new "THE ARCTIC", "You are on a beautiful, icy, rocky beach.", 1
+  StartRoom = Room.new "THE ARCTIC", "You are on a beautiful, icy, rocky beach.", 1, 0, 0, 0
+#x, y, z
+
+  
 end
 
