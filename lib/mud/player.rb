@@ -30,7 +30,7 @@ module MUD
       @berserker = false
       @berserk_counter = 0
       @berserk = false
-      @autowield = false
+      @autowield = true
       @fighting = nil
       @exp = 0
       @position = :flop
@@ -77,7 +77,8 @@ module MUD
         "sc" => "score",
         "w" => "wear",
         "ww" => "wield",
-        "un" => "unwield"    
+        "un" => "unwield",
+        "rb" => "ripback"    
       }
     end
     
@@ -86,6 +87,7 @@ module MUD
       begin
         @dirty = true
         case cmd
+          when "ripback"; do_ripback(arg)
           when "zombie"; do_zombie
           when "berserker"; do_berserker
           when "autowield"; do_autowield
@@ -181,6 +183,7 @@ module MUD
       tt = toy[rand(toy.size)]      
       act { |c| "#{c} #{c.roar!} and #{c.hold!} a #{cc} #{tt} aloft!\n"}      
       @wield.push MagicalItem.new tt, cc
+      @hp = @hp + rand(500)
       update_combat_stats
       timer.cancel 
       end      
@@ -223,6 +226,60 @@ module MUD
     def do_say(message)
       send "You say '#{message}'"
       other_players.each { |p| p.send "#{name} says '#{message}'" }
+    end
+
+  
+    def do_ripback(name)
+      if name
+        target = find_player_by_name(name)
+          if target
+            target = find_player_by_name!(name)
+              if target.cranium.empty?
+                if target.ribcage.empty?
+                  if target.eye.empty?
+                    if target.flipper.empty?
+                      if target.tail.empty?  
+                      else
+                        loc = tail
+                        locs = "tail"
+                        do_rip_action(target, tail, "tail")
+                      end
+                    else
+                      loc = flipper
+                      locs = "flipper"
+                      do_rip_action(target, flipper, "flipper")
+                    end     
+                  else
+                    loc = eye
+                    locs = "eye"
+                    do_rip_action(target, eye, "eye")             
+                  end
+                else
+                  loc = ribcage
+                  locs = "ribcage"
+                  do_rip_action(target, ribcage, "ribcage")
+                end     
+              else
+                loc = cranium
+                locs = "cranium"
+                do_rip_action(target, cranium, "cranium")
+              end
+          else
+          end     
+      else
+      end    
+    end
+    
+    def do_rip_action(target, loc, locs)
+      if @wield.empty?
+      else    
+        act(:drop) { |c| "#{c} #{c.verb} #{@wield.last} on the ground." }
+        @room.item.push(@wield.pop)
+      end
+      act(:rip) { |c, loc, locs| "#{c} #{c.rip!} #{target.loc.last} from  #{c.tarpospronoun} #{locs}. BLOOD spurts from a gaping hole in #{c.tarpospronoun} #{locs}}!" }
+      target.hp = target.hp - target.loc.length
+      @wield.push(target.loc.pop)
+      update_combat_stats
     end
 
     def do_look(name)
@@ -275,7 +332,7 @@ module MUD
         send "#{@room.bubblegum} pieces of bubblegum sit here."
         send " [------]"
           
-        other_players.each { |p| send "A #{p.type} named #{p.name} is here." }
+        other_players.each { |p| send "A baby #{p.type} named #{p.name} is here." }
           
         if @room.item.empty?
            send "no items"
@@ -293,7 +350,7 @@ module MUD
     end
     
     def do_rip(loc)
-      case loc
+        case loc
         when "cranium"
           @loc = @cranium
           locs = "cranium"

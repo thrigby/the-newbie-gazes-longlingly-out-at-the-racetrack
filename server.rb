@@ -8,3 +8,4 @@ EventMachine::run do
   puts "Started #{MUD::Brand} Server. To connect use 'telnet 0.0.0.0 #{MUD::Port}'"
 end
 
+cold me

@@ -21,7 +21,7 @@ module MUD
       send "      socials: flex, spit, smile"
       send "    sexchange: change those personal pronouns"
       send "         kill: kill target."
-      send "          rip: rip eye, rip tail, etc... if you get impaled, remember. they just gave you a weapon."
+      send "          rip: rip eye, rip tail, etc... if you get impaled, remember. they just gave you a weapon. rip foe location is an EVIL move."
       send "         Drop: you drop a magic item on the ground."
       send "         glue: glue two objects together. note- if you have three or more objects in your inventory, you'll lose them."
       send " Capitalized commands have shortcuts, the first letter of the command. l for look, w for wear, and so on. note: b = bounce, bb = blow bubble"
@@ -144,7 +144,7 @@ module MUD
           elsif target.type == :ghost
             send "#{target.name} is a ghost. You can't hurt them."
           elsif target.type == :seal
-            timer = EventMachine::PeriodicTimer.new(1) do
+            timer = EventMachine::PeriodicTimer.new(5) do
             update_combat_stats
             target.update_combat_stats
             dead_check(target)
@@ -169,9 +169,10 @@ module MUD
     def update_combat_stats
       @defense_power = @wear.to_s.length.to_i + @blubber
       @attack_power = @wield.to_s.length.to_i + @bead
+      
       run_autowield  
       if @berserker == true
-        @berserk_counter = @berserk_counter += 1
+        @berserk_counter += 1
         special_number = rand(3)
         if @berserk_counter == special_number
           
@@ -189,8 +190,11 @@ module MUD
       @autowield = true
       else
       send "You turn off autowield."
+      @autowield = false
       end      
     end
+
+
     
     def run_autowield
       if @autowield == false
@@ -201,7 +205,7 @@ module MUD
               if @wear.empty?
                 act { |c| "#{c} #{c.squeek!} feeling helpless!"}
               else
-                act { |c| "#{c} #{c.flip} a #{@wear.last} from #{c.pospronoun} head into #{c.pospronoun} mouth!"}
+                act { |c| "#{c} #{c.flip!} a #{@wear.last} from #{c.pospronoun} head into #{c.pospronoun} mouth!"}
                 @wield.push(@wear.pop)
               end
             else
@@ -226,7 +230,8 @@ module MUD
         else
           act { |c| "#{c.target} #{c.tisare} DEAD!!!\n"}
         end
-          
+        
+
           @hp = @hp + target.whisker
           @cute = @cute + target.cute 
           @blubber = @blubber + target.blubber
@@ -246,6 +251,12 @@ module MUD
 #          target.name = "The ghost of #{target.name}"
           target.type = :ghost
           
+          if @type == :zombie
+            do_zombie_coup_de_grace(target)
+          else
+          end
+          
+          
       end
       if @hp > 0    
       else   
@@ -255,6 +266,7 @@ module MUD
         else
          act { |c| "#{c} #{c.isare} DEAD!!!\n"}
         end
+        
          target.hp = target.hp + @whisker
          target.cute = target.cute + @cute 
          target.blubber = target.blubber + @blubber
@@ -272,8 +284,18 @@ module MUD
          target.send "You feel Stronger! You feel cuter! You gain #{(1 + @exp)} experience!"
 #         @name = "The ghost of #{@name}"
          @type = :ghost
+         
+         
+         if target.type == :zombie
+           do_zombie_coup_de_grace(target)
+         else
+         end
       end      
     end    
+    
+    def do_zombie_coup_de_grace(target)
+      send "coup de grace"
+    end
     
     def do_ascend
       if @type == :ghost

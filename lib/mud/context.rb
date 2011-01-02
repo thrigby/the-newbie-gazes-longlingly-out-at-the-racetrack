@@ -125,7 +125,7 @@ module MUD
           "#{verb}s"
         end
       else
-        super method, *argsja
+        super method, *args
         
       end
     end
