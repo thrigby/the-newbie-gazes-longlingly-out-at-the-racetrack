@@ -145,14 +145,18 @@ module MUD
             send "#{target.name} is a ghost. You can't hurt them."
           elsif target.type == :seal
             timer = EventMachine::PeriodicTimer.new(5) do
+            rip = rand(3)
+              if rip == 0
+                do_ripback(name)  
+                target.do_ripback(@name)
+              end  
             update_combat_stats
             target.update_combat_stats
             dead_check(target)
             timer.cancel if @hp < 0
             timer.cancel if target.hp < 0
             if @hp > 0 && target.hp > 0
-              do_swing(target)
-              
+              do_swing(target)              
             else
             end
             prompt
@@ -339,7 +343,7 @@ module MUD
         if target.wield.empty?
           defensive_nuzzle(target)     
         else
-          decide_hit(target)
+          defensive_maneuver(target)
         end  
       else #bouncing attack
         if @wield.empty?
@@ -410,6 +414,17 @@ module MUD
         end          
     end
 
+    def defensive_maneuver(target)
+      if target.wield.empty?
+        defensive_nuzzle(target)
+      else
+        x = rand(3000)
+        send x
+        target.send x
+      end
+      
+    end
+
     def outcome(hitnumber, target)
       
         wound(target, hitnumber)     
@@ -418,7 +433,7 @@ module MUD
           when -1000..-51
                impale(target, hitnumber)   
           when -50..-31
-             act(:crash, target) { |c| "#{c.target} #{c.bounce!} into the air and #{c.tarverb} into #{c} with #{target.wield}." }
+             act(:bellyflop, target) { |c| "#{c} #{c.bounce!} into the air and #{c.verbes} into #{c.tarpospronoun} #{target.wield}." }
                knock(target, hitnumber)
           when -30..-21
              act(:throw, target) { |c| "#{c} #{c.verb} #{c.pospronoun} face on #{c.tarpospronoun} #{target.wield}." }
@@ -429,7 +444,7 @@ module MUD
           when 0..10
              act(:puke, target) { |c| "#{c} #{c.verb} on #{c.pospronoun} bib and #{c.burst!} into tears." }
           when 11..20
-             act(:roar, target) { |c| "#{c} #{c.verb} and #{c.bat!} at #{c.target} with #{@wield}" }
+             act(:roar, target) { |c| "#{c} #{c.verb} and #{c.bat!} at #{c.target} with a #{@wield}." }
           when 21..30
              act(:oink, target) { |c| "#{c} #{c.verb} like a pig and #{c.nuzzle!} #{c.target} with a #{@wield}." }
           when 31..50

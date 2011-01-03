@@ -78,7 +78,7 @@ module MUD
         "w" => "wear",
         "ww" => "wield",
         "un" => "unwield",
-        "rb" => "ripback"    
+#        "rb" => "ripback"    
       }
     end
     
@@ -228,60 +228,58 @@ module MUD
       other_players.each { |p| p.send "#{name} says '#{message}'" }
     end
 
-  
     def do_ripback(name)
       if name
         target = find_player_by_name(name)
           if target
-            target = find_player_by_name!(name)
-              if target.cranium.empty?
-                if target.ribcage.empty?
-                  if target.eye.empty?
-                    if target.flipper.empty?
-                      if target.tail.empty?  
-                      else
-                        loc = tail
-                        locs = "tail"
-                        do_rip_action(target, tail, "tail")
-                      end
-                    else
-                      loc = flipper
-                      locs = "flipper"
-                      do_rip_action(target, flipper, "flipper")
-                    end     
-                  else
-                    loc = eye
-                    locs = "eye"
-                    do_rip_action(target, eye, "eye")             
-                  end
-                else
-                  loc = ribcage
-                  locs = "ribcage"
-                  do_rip_action(target, ribcage, "ribcage")
-                end     
-              else
-                loc = cranium
-                locs = "cranium"
-                do_rip_action(target, cranium, "cranium")
-              end
+            target = find_player_by_name!(name)            
+            if !target.ribcage.empty?
+              do_unwield
+              act(target) { |c| "#{c} #{c.rip!} a #{target.ribcage.last} from #{c.tarpospronoun} ribcage!"}
+              @wield.push(target.ribcage.pop)
+              target.hp = target.hp - @wield.length
+              update_combat_stats
+            end
+            if !target.tail.empty?
+              do_unwield
+              act(target) { |c| "#{c} #{c.rip!} a #{target.tail.last} from #{c.tarpospronoun} tail!"}
+              @wield.push(target.tail.pop)
+              target.hp = target.hp - @wield.length
+              update_combat_stats
+            end
+            if !target.flipper.empty?
+              do_unwield
+              act(target) { |c| "#{c} #{c.rip!} a #{target.flipper.last} from #{c.tarpospronoun} flipper!"}
+              @wield.push(target.flipper.pop)
+              target.hp = target.hp - @wield.length
+              update_combat_stats
+            end
+            if !target.cranium.empty?
+              do_unwield
+              act(target) { |c| "#{c} #{c.rip!} a #{target.cranium.last} from #{c.tarpospronoun} cranium!"}
+              @wield.push(target.cranium.pop)
+              target.hp = target.hp - @wield.length
+              update_combat_stats
+            end
+            if !target.eye.empty?
+              do_unwield
+              act(target) { |c| "#{c} #{c.rip!} a #{target.eye.last} from #{c.tarpospronoun} eye!"}
+              @wield.push(target.eye.pop)
+              target.hp = target.hp - @wield.length
+              update_combat_stats
+            end
           else
-          end     
-      else
-      end    
+          end
+        else
+        end
+      
+#      arrayloc = rand(target.wear.size)
+#      arrayitem = target.wear[arrayloc]
+#      act(:wack, target) { |c| "#{c} #{c.verb} #{c.target} so hard that it knocks a #{arrayitem} from his head!"}
+#      @room.item.push(target.wear.slice!(arrayloc))
+      
     end
     
-    def do_rip_action(target, loc, locs)
-      if @wield.empty?
-      else    
-        act(:drop) { |c| "#{c} #{c.verb} #{@wield.last} on the ground." }
-        @room.item.push(@wield.pop)
-      end
-      act(:rip) { |c, loc, locs| "#{c} #{c.rip!} #{target.loc.last} from  #{c.tarpospronoun} #{locs}. BLOOD spurts from a gaping hole in #{c.tarpospronoun} #{locs}}!" }
-      target.hp = target.hp - target.loc.length
-      @wield.push(target.loc.pop)
-      update_combat_stats
-    end
-
     def do_look(name)
       if name
         target = find_player_by_name(name)
