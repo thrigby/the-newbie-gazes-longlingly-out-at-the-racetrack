@@ -114,7 +114,27 @@ module MUD
     def to_s
       self.subject
     end
-  
+
+=begin
+^ beginning of a line (optional)
+$ end of a line (necessary)
+(only match this is it matches the full line. looking for something that ENDS with an exclamation point.)
+bang is slang for exclamation point!
+\ prepend to say, look for actual character rather than the special symbol it represents... thus \!
+oh wait... the backslash is unnecessary because ! isn't a special character. thus ^ and $ are unnecessary in this particular example.
+. means any character.
++ means, one or more of whatever character is to the left of me.
+x+ would mean, match one or more x's
+.+ means one or more character, followed by a bang, followed by an end of line.
+( ) hey, if this matches, take whatever is in here and shove it into the $1. if multiple parantheticals, $1, $2...
+
+give me a string that starts with one more more characters, followed by an exclamation point, followed by an end of line, and then shove it into $1.
+
+ /(.+)!$/ 
+ is the concise version!
+ 
+setting up the alias of verb is just giving $1 a nice description. more descriptive coding.
+=end  
           
     def method_missing(method, *args)
       if method.to_s =~ /^(.+)\!$/
