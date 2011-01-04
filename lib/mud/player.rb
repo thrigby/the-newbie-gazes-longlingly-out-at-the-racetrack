@@ -87,6 +87,7 @@ module MUD
       begin
         @dirty = true
         case cmd
+          when "pirate"; do_pirate
           when "ripback"; do_ripback(arg)
           when "zombie"; do_zombie
           when "berserker"; do_berserker
@@ -183,10 +184,30 @@ module MUD
       tt = toy[rand(toy.size)]      
       act { |c| "#{c} #{c.roar!} and #{c.hold!} a #{cc} #{tt} aloft!\n"}      
       @wield.push MagicalItem.new tt, cc
-      @hp = @hp + rand(500)
+      @hp += rand(500)
       update_combat_stats
       timer.cancel 
       end      
+    end
+    
+    def do_pirate
+      act { |c| "#{c} #{c.begin!} murmuring an old pirate song."}
+      timer = EventMachine::PeriodicTimer.new(2) do 
+      color = ["mangy", "salt water taffy", "barnacled", "rusty"]
+      cc = color[rand(color.size)]
+      cc2 = color[rand(color.size)]
+      toy = ["eye patch", "parrot", "peg leg", "bottle of grog", "pirate hat"]
+      tt = toy[rand(toy.size)]
+      tt2 = toy[rand(toy.size)]
+      act { |c| "The spirits of the pirate kings smile down upon #{c}."}
+      act { |c| "#{c} #{c.hold!} a #{cc} #{tt} aloft!\n"} 
+      act { |c| "A #{cc2} #{tt2} appears on #{c.pospronoun} head!\n"}
+      @wield.push MagicalItem.new tt, cc
+      @wear.push MagicalItem.new tt2, cc2
+      @hp += rand(500)
+      update_combat_stats
+      timer.cancel
+      end
     end
     
     def do_zombie
@@ -272,7 +293,29 @@ module MUD
           end
         else
         end
-      
+
+=begin
+from MG:
+1. If you're calling do_unwield in every case, then why not just call it once, prior to the stack of if statements? Same with update_combat_stats, you should just call that once as well, but you obviously want to make sure that it needs to be called. I'll handle this w/ a boolean variable, which you declare after "if target", something like this:
+
+if target
+ target = find_player_by_name!(name)
+ call_update = false
+ if !target.ribcage.empty?
+ ....
+
+And then, after all those if statements: update_combat_stats if call_update -- this will be much more efficient that calling the method a possible five times.
+
+2. target = find_player_by_name!(name) -- I saw that Orion setup this method, but it's misleading, b/c the ! symbol generally means that the method will somehow change the object it's called on. You've probably already read this. If not, look at String#upcase vs String@upcase! -- upcase() will return a separate String object while upcase!() will modify the String object itself and returns nil. Orion is obviously aware of this, but I wanted to make sure you were conscious of the assumption drawn from that notation.
+
+3. This is another place where you can shorten your increment assignments: target.hp = target.hp - @wield.length could be : target.hp -= @wield.length
+
+
+Nothing major, just some food-for-thought type stuff. Hope it helps.
+
+Just saw why Orion used find_player_by_name!() -- in the Rails library, it signifies a method that throws an exception upon failure, which this method does, rather than failing silently.
+
+=end      
 #      arrayloc = rand(target.wear.size)
 #      arrayitem = target.wear[arrayloc]
 #      act(:wack, target) { |c| "#{c} #{c.verb} #{c.target} so hard that it knocks a #{arrayitem} from his head!"}
@@ -377,7 +420,7 @@ module MUD
           end        
           act(:rip) { |c| "#{c} #{c.grit!} #{c.pospronoun} teeth and #{c.verb} #{@loc.last} from #{c.pospronoun} #{locs}. BLOOD spurts from a gaping hole in #{c.pospronoun} #{locs} and #{c} #{c.ROAR!}!" }
           @wield.push(@loc.pop)
-          @hp = @hp - @wield.length
+          @hp -= @wield.length
           update_combat_stats
         end      
       

@@ -181,7 +181,7 @@ module MUD
         if @berserk_counter == special_number
           
           act(:go) { |c| "#{c} #{c.froth!} and #{c.roar!} and #{c.verbes} BERSERK, rocking some wicked air guitar!"}
-          @attack_power = @attack_power + 50
+          @attack_power += 50
         else
         end
       else
@@ -458,9 +458,9 @@ module MUD
     
     def wound(target, hitnumber)
       if hitnumber > 0
-      target.hp = target.hp - hitnumber
+      target.hp -= hitnumber
       else
-      @hp = @hp + hitnumber
+      @hp += hitnumber
       end    
     end
     
