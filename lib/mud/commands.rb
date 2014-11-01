@@ -592,6 +592,388 @@ module MUD
       end
     end    
 
+    def do_berserker
+      @berserker = true
+      act(:squint) { |c| "#{c} #{c.verb} and #{c.look!} like it's poop-time!" }
+      timer = EventMachine::PeriodicTimer.new(3) do     
+        helm, toy = MagicalItem.bazerker_items
+        @wear.push helm
+        act { |c| "\n#{c} #{c.isare} infused with the spirit of the Vikings!\nA #{helm.color} #{helm.name} appears on #{c.pospronoun} head!\n"}      
+        act { |c| "#{c} #{c.roar!} and #{c.hold!} a #{toy.color} #{toy.name} aloft!\n"}      
+        @wield.push toy
+        @hp += rand(500)
+        update_combat_stats
+        timer.cancel 
+      end      
+    end
+    
+    def do_pirate
+      act { |c| "#{c} #{c.begin!} murmuring an old pirate song."}
+      timer = EventMachine::PeriodicTimer.new(2) do 
+      color = ["mangy", "salt water taffy", "barnacled", "rusty"]
+      cc = color[rand(color.size)]
+      cc2 = color[rand(color.size)]
+      toy = ["eye patch", "parrot", "peg leg", "bottle of grog", "pirate hat"]
+      tt = toy[rand(toy.size)]
+      tt2 = toy[rand(toy.size)]
+      act { |c| "The spirits of the pirate kings smile down upon #{c}."}
+      act { |c| "#{c} #{c.hold!} a #{cc} #{tt} aloft!\n"} 
+      act { |c| "A #{cc2} #{tt2} appears on #{c.pospronoun} head!\n"}
+      @wield.push MagicalItem.new tt, cc
+      @wear.push MagicalItem.new tt2, cc2
+      @hp += rand(500)
+      update_combat_stats
+      timer.cancel
+      end
+    end
+    
+    def do_zombie
+      if @type == :ghost
+        @hp = rand(1000)
+        @type = :zombie
+        act(:snarl) { |c| "#{c} #{c.verb} and #{c.groan!} and #{c.rise!} from the dead to hunt for BRAINS!"}
+      else
+        send "You must be dead before you can become a zombie."
+      end
+    end
+
+    def do_spit(name)
+      # orion: note I can aboid the NOBDY home thing here since it will jump up to the exception handler above
+      # also - target.name is a pain to type ... if you have Player#to_s return @name we could just say 'target' here...
+      if name
+        target = find_player_by_name!(name)
+        act(:spit, target) { |c| "#{c} #{c.spit!} on #{c.target}." }
+      else
+        act { |c| "#{c} #{c.spit!}." }
+      end
+    end
+
+    def do_dig_west
+      west = @room.coord_x - 1
+      new_room = Room.new "Ice Tunnel", "It's cold.", @room.number + 1, west, @room.coord_y, @room.coord_z
+      send "You use your baby seal magic powers and dig westward!"
+      send "You have created a new room!"
+      other_players.each { |p| p.send "#{name} digs a new room to the west."}
+      
+    end
+    
+#    def do_west
+#      to_room(1)
+#    end
+    
+    def do_say(message)
+      send "You say '#{message}'"
+      other_players.each { |p| p.send "#{name} says '#{message}'" }
+    end
+
+    def do_ripback(name)
+      if name
+        target = find_player_by_name(name)
+          if target
+            target = find_player_by_name!(name)            
+            if !target.ribcage.empty?
+              do_unwield
+              act(target) { |c| "#{c} #{c.rip!} a #{target.ribcage.last} from #{c.tarpospronoun} ribcage!"}
+              @wield.push(target.ribcage.pop)
+              target.hp = target.hp - @wield.length
+              update_combat_stats
+            end
+            if !target.tail.empty?
+              do_unwield
+              act(target) { |c| "#{c} #{c.rip!} a #{target.tail.last} from #{c.tarpospronoun} tail!"}
+              @wield.push(target.tail.pop)
+              target.hp = target.hp - @wield.length
+              update_combat_stats
+            end
+            if !target.flipper.empty?
+              do_unwield
+              act(target) { |c| "#{c} #{c.rip!} a #{target.flipper.last} from #{c.tarpospronoun} flipper!"}
+              @wield.push(target.flipper.pop)
+              target.hp = target.hp - @wield.length
+              update_combat_stats
+            end
+            if !target.cranium.empty?
+              do_unwield
+              act(target) { |c| "#{c} #{c.rip!} a #{target.cranium.last} from #{c.tarpospronoun} cranium!"}
+              @wield.push(target.cranium.pop)
+              target.hp = target.hp - @wield.length
+              update_combat_stats
+            end
+            if !target.eye.empty?
+              do_unwield
+              act(target) { |c| "#{c} #{c.rip!} a #{target.eye.last} from #{c.tarpospronoun} eye!"}
+              @wield.push(target.eye.pop)
+              target.hp = target.hp - @wield.length
+              update_combat_stats
+            end
+          else
+          end
+        else
+        end
+
+=begin
+from MG:
+1. If you're calling do_unwield in every case, then why not just call it once, prior to the stack of if statements? Same with update_combat_stats, you should just call that once as well, but you obviously want to make sure that it needs to be called. I'll handle this w/ a boolean variable, which you declare after "if target", something like this:
+
+if target
+ target = find_player_by_name!(name)
+ call_update = false
+ if !target.ribcage.empty?
+ ....
+
+And then, after all those if statements: update_combat_stats if call_update -- this will be much more efficient that calling the method a possible five times.
+
+2. target = find_player_by_name!(name) -- I saw that Orion setup this method, but it's misleading, b/c the ! symbol generally means that the method will somehow change the object it's called on. You've probably already read this. If not, look at String#upcase vs String@upcase! -- upcase() will return a separate String object while upcase!() will modify the String object itself and returns nil. Orion is obviously aware of this, but I wanted to make sure you were conscious of the assumption drawn from that notation.
+
+3. This is another place where you can shorten your increment assignments: target.hp = target.hp - @wield.length could be : target.hp -= @wield.length
+
+
+Nothing major, just some food-for-thought type stuff. Hope it helps.
+
+Just saw why Orion used find_player_by_name!() -- in the Rails library, it signifies a method that throws an exception upon failure, which this method does, rather than failing silently.
+
+=end      
+#      arrayloc = rand(target.wear.size)
+#      arrayitem = target.wear[arrayloc]
+#      act(:wack, target) { |c| "#{c} #{c.verb} #{c.target} so hard that it knocks a #{arrayitem} from his head!"}
+#      @room.item.push(target.wear.slice!(arrayloc))
+      
+    end
+    
+    def do_look(name)
+      if name
+        target = find_player_by_name(name)
+          if target
+            target = find_player_by_name!(name)
+            act(:sniff, target) { |c| "#{c} #{c.sniff!} #{c.target}." }
+            send "#{target.subpronoun} has carefully stacked and balanced #{target.wear.size} things on #{target.pospronoun} cute little noggin."
+            target.wear.each do |item|
+            send "#{item}"
+            end
+            send "\n#{target.subpronoun} carries #{target.inv.size} things on #{target.pospronoun} back."
+            target.inv.each do |item|
+            send "#{item}"            
+            end
+            if target.wield.empty?
+              send "\n#{target.subpronoun} is as defenseless and helpless as a baby seal!"
+            else
+              target.wield.each do |item|
+              send "\n#{target.subpronoun} wields #{item} in #{target.pospronoun} mouth.\n"
+              end
+            end
+               
+            if target.cranium.empty?     
+            else
+            target.cranium.each { |m| send "#{m.item} has been embedded in #{target.pospronoun} cranium."}
+            end
+            if target.ribcage.empty?     
+            else
+            target.ribcage.each { |m| send "#{m.item} has been embedded in #{target.pospronoun} ribcage."}
+            end
+            if target.eye.empty?     
+            else
+            target.eye.each { |m| send "#{m.item} has been embedded in #{target.pospronoun} eye."}
+            end
+            if target.flipper.empty?     
+            else
+            target.flipper.each { |m| send "#{m.item} has been embedded in #{target.pospronoun} flipper."}
+            end
+            if target.tail.empty?     
+            else
+            target.tail.each { |m| send "#{m.item} has been embedded in #{target.pospronoun} tail."}
+            end    
+          else
+          end
+      else
+        send "#{@room.title}"
+        send "#{@room.desc}"
+        send "#{@room.bubblegum} pieces of bubblegum sit here."
+        send " [------]"
+          
+        other_players.each { |p| send "A baby #{p.type} named #{p.name} is here." }
+          
+        if @room.item.empty?
+           send "no items"
+        else
+          if @room.item[1] == nil
+            send "You see a #{@room.item}"
+          else
+            copyitems = @room.item.clone
+            lastitem = copyitems.pop
+            mainstring = copyitems.join(", a ")
+            send "You see a #{mainstring}, and a #{lastitem}."
+          end                   
+        end      
+      end
+    end
+    
+    def do_rip(loc)
+        case loc
+        when "cranium"
+          @loc = @cranium
+          locs = "cranium"
+        when "ribcage"
+          @loc = @ribcage
+          locs = "ribcage"
+        when "eye"
+          @loc = @eye
+          locs = "eye"
+        when "tail"
+          @loc = @tail
+          locs = "tail"
+        when "flipper"
+          @loc = @flipper
+          locs = "flipper"     
+      else
+        send "your call is important to us. please stay on the line."
+      end  
+        if @loc.empty?
+          send "nothing is impaling you in the #{locs}"
+        else
+          if @wield.empty?
+          else  
+          act(:drop) { |c| "#{c} #{c.verb} #{@wield} to the ground."}
+          @room.item.push(@wield.pop)
+          end        
+          act(:rip) { |c| "#{c} #{c.grit!} #{c.pospronoun} teeth and #{c.verb} #{@loc.last} from #{c.pospronoun} #{locs}. BLOOD spurts from a gaping hole in #{c.pospronoun} #{locs} and #{c} #{c.ROAR!}!" }
+          @wield.push(@loc.pop)
+          @hp -= @wield.length
+          update_combat_stats
+        end      
+      
+    end
+    
+    def do_exit
+      send "A Polar Bear Eats You!"
+      other_players.each { |p| p.send "#{name} was dragged away by a polar bear!" }
+      con.close_connection_after_writing
+      @room.players.delete self    
+    end
+
+    def do_drop
+      if @inv.empty?
+        send "you're not carrying anything to drop."
+      else    
+        act(:drop) { |c| "#{c} #{c.verb} #{@inv.last} on the ground." }
+        @room.item.push(@inv.pop)
+      end    
+    end
+
+    def do_take
+      do_get
+      if @room.item.empty? || @inv.count >= 3
+      else
+        @room.item[0..2].count.times do
+          act(:pick) { |c| "#{c} #{c.verb} up #{@room.item.last} and #{c.flip!} it on #{c.pospronoun} back." }
+          @inv << @room.item.pop
+        end
+      end 
+    end
+
+    def do_bounce
+      bouncygum = rand(4) + 1   
+      @room.bubblegum += bouncygum
+      @position = :bounce
+      act(:bounce) { |c| "#{c} #{c.verb} up and down and #{bouncygum} pieces of magic bubblegum appear!" }
+    end
+
+    def do_get
+      if @room.bubblegum == 0        
+      else
+        act(:pick) { |c| "#{c} #{c.verb} up #{@room.bubblegum} pieces of magical bubblegum." }
+        @inventorybg += @room.bubblegum
+        @room.bubblegum = 0
+      end
+    end
+    
+    def do_wield
+      if @inv.empty?
+        "You aren't carrying anything to wield."
+      else
+        if wield.empty?
+        @wield.push(@inv.pop)
+        act(:wield) { |c| "#{c} #{c.verb} #{@wield} in #{c.pospronoun} mouth."}
+        @attack_power = @wield.to_s.length.to_i + @bead  
+        else
+        act { |c| "#{c} #{c.drop!} #{@wield} from #{c.pospronoun} mouth and #{c.grip!} #{@inv.last} menacingly." }
+        @room.item.push(@wield.pop)
+        @wield.push(@inv.pop)
+        update_combat_stats
+        end
+      end
+    end
+    
+    def do_unwield
+      if @wield.empty?
+        "You aren't wielding anything."
+      else
+        act(:flip) { |c| "#{c} #{c.verb} #{@wield} from #{c.pospronoun} mouth onto #{c.pospronoun} back."}
+        @inv.push(@wield.pop)
+        @attack_power = @wield.to_s.length.to_i + @bead        
+      end
+    end
+
+    def do_blow
+      unless @readytoblow
+        send "You must chew the bubblegum before you can blow a bubble!"
+      else
+        act(:blow) { |c| "#{c} #{c.verb} a bright red, maggic bubble until it POPS!"}
+        @readytoblow = false
+        @room.add_item MagicalItem.random_toy
+      end
+    end
+     
+    def do_glue
+      unless @readytoblow
+        send "You must chew the gum before you can use it as glue!"
+      else
+        if @inv.empty?
+          send "You need at least two things in your inventory to glue together."
+        else
+          act(:glue) { |c| "#{c} carefully #{c.verb} #{@inv[0]} to #{@inv[1]} with a gooey wad of magic bubblegum."}       
+          @inv << MagicalItem.new("glued to #{@inv.shift}","#{@inv.shift}")
+        end  
+      end
+    end     
+        
+    def prompt
+      con.send_data "hp: #{hp} cute: #{cute}> "
+      @dirty = false
+    end
+
+    def subpronoun
+      case @gender
+        when :male  then    "He"
+        when :female then   "She"
+        else                "It"
+      end
+    end
+
+    def pospronoun
+      case @gender
+        when :male   then "his"
+        when :female then "her"
+        else              "its"
+      end
+    end
+    
+    def objpronoun
+      case @gender
+        when :male     then "him"
+        when :female   then "her" 
+        else                "its"
+      end
+    end    
+
+    def do_sexchange
+      if gender == :male
+        @gender = :female
+        act { |c| "#{c} #{c.grow!} girl parts." }
+      else
+        @gender = :male
+        act { |c| "#{c} #{c.zoom!} boy parts and #{c.smile!}." }
+      end
+    end        
 
 =begin      
       
